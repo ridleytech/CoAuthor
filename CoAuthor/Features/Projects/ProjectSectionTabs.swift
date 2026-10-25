@@ -53,7 +53,7 @@ struct ProjectSectionTabs: View {
         switch section {
         case .overview: .projectDetail(projectID)
         case .story: storyDestination ?? .ideaGeneration(projectID: projectID)
-        case .audio: .placeholder(title: "Audio review", milestone: "M8")
+        case .audio: .voiceCasting(projectID: projectID)
         case .publish: .placeholder(title: "Publishing kit", milestone: "M10")
         }
     }

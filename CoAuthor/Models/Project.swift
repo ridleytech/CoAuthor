@@ -50,6 +50,10 @@ final class Project {
     var selectedIdeaID: UUID?
     /// True once an outline exists — steers the Story tab route.
     var hasOutline: Bool = false
+    /// Voice Design prompt shown on the casting screen (M6).
+    var voiceDesignPrompt: String = ""
+    /// "Approve voice description" state on the casting screen.
+    var voicePromptApproved: Bool = false
     /// Asset-catalog name for the featured cover image, if any.
     var coverImageName: String?
     var createdAt: Date
@@ -78,6 +82,8 @@ final class Project {
         cuesTotal: Int = 0,
         selectedIdeaID: UUID? = nil,
         hasOutline: Bool = false,
+        voiceDesignPrompt: String = "",
+        voicePromptApproved: Bool = false,
         coverImageName: String? = nil,
         createdAt: Date = Date(),
         lastEditedAt: Date = Date()
@@ -104,6 +110,8 @@ final class Project {
         self.cuesTotal = cuesTotal
         self.selectedIdeaID = selectedIdeaID
         self.hasOutline = hasOutline
+        self.voiceDesignPrompt = voiceDesignPrompt
+        self.voicePromptApproved = voicePromptApproved
         self.coverImageName = coverImageName
         self.createdAt = createdAt
         self.lastEditedAt = lastEditedAt

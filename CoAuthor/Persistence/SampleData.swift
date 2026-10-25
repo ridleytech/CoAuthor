@@ -38,6 +38,10 @@ enum SampleData {
                 cuesApproved: 8,
                 cuesTotal: 32,
                 selectedIdeaID: UUID(uuidString: "E5555555-5555-5555-5555-555555555551")!,
+                voiceDesignPrompt: "A mature American woman with a warm lower "
+                    + "register and lightly textured tone. Subtle Great Lakes "
+                    + "vowels, clear consonants, measured pacing. Understated "
+                    + "emotional range; never theatrical.",
                 coverImageName: "DashboardHero",
                 createdAt: cal.date(byAdding: .day, value: -14, to: now)!,
                 lastEditedAt: cal.date(byAdding: .hour, value: -2, to: now)!
@@ -286,6 +290,119 @@ enum SampleData {
         }
     }
 
+    /// Saved voices matching the Saved Voices design reference —
+    /// ten account voices (8 custom + catalog), Marlene assigned to
+    /// The Numbers Widow.
+    static func makeVoices() -> [Voice] {
+        let widowID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        let mapID = UUID(uuidString: "C3333333-3333-3333-3333-333333333333")!
+        return [
+            Voice(
+                name: "Marlene", localLabel: "Detroit narrator",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Narrator", descriptor: "Detroit narrator",
+                summary: "Warm, grounded storytelling with a mature lower register.",
+                tags: ["Narrator", "Warm", "Mature", "Great Lakes American"],
+                sampleSeconds: 23, isFavorite: true,
+                designPrompt: "Mature American woman, warm lower register, "
+                    + "lightly textured tone. Clear consonants, unhurried "
+                    + "pacing, understated emotional range.",
+                savedVoiceID: "ca_voice_marlene_detroit",
+                localName: "Marlene · Detroit narrator",
+                localLabels: "Narrator / Warm / Mature",
+                localNotes: "Note: keep dialogue firm and restrained.",
+                assignedProjectID: widowID,
+                assignmentLabel: "The Numbers Widow · Series narrator"
+            ),
+            Voice(
+                name: "Samuel", origin: "ElevenLabs catalog", kind: "Catalog",
+                roleTag: "Narrator",
+                summary: "Calm, resonant delivery for thoughtful nonfiction and fiction.",
+                tags: ["Resonant", "Calm", "General American"],
+                sampleSeconds: 31,
+                assignedProjectID: mapID,
+                assignmentLabel: "A Map of Small Returns"
+            ),
+            Voice(
+                name: "June", origin: "ElevenLabs catalog", kind: "Catalog",
+                roleTag: "Narrator · Character",
+                summary: "Bright, conversational delivery with natural character range.",
+                tags: ["Narrator · Character", "Conversational", "Midwestern American"],
+                sampleSeconds: 28
+            ),
+            Voice(
+                name: "Odessa", localLabel: "performance study",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance study",
+                summary: "Warm and direct; laughter close to the surface.",
+                tags: ["Character", "Textured", "Warm", "Detroit American"],
+                sampleSeconds: 19
+            ),
+            Voice(
+                name: "Calvin", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Dry, measured delivery for procedural and technical scenes.",
+                tags: ["Custom", "Dry", "Measured", "Neutral American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+            Voice(
+                name: "Evelyn", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Bright, intimate delivery with a subtle emotional edge.",
+                tags: ["Custom", "Intimate", "Emotional", "Upper Midwest American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+            Voice(
+                name: "Ruth", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Clear, authoritative delivery for exposition and guidance.",
+                tags: ["Custom", "Authoritative", "Clear", "Standard American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+            Voice(
+                name: "Gloria", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Warm, expressive delivery for character-driven scenes.",
+                tags: ["Custom", "Expressive", "Warm", "Inland American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+            Voice(
+                name: "Leon", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Deep, steady delivery for dramatic and reflective scenes.",
+                tags: ["Custom", "Deep", "Steady", "Great Lakes American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+            Voice(
+                name: "Dexter", localLabel: "performance guide",
+                origin: "Created in CoAuthor", kind: "Custom",
+                roleTag: "Character", descriptor: "performance guide",
+                summary: "Sharp, agile delivery for fast-paced dialogue and action.",
+                tags: ["Custom", "Agile", "Sharp", "Urban American"],
+                sampleSeconds: 0, isAvailable: false
+            ),
+        ]
+    }
+
+    /// Cast assignments for The Numbers Widow — Odessa already approved
+    /// per the casting-detail reference.
+    static func makeCastAssignments() -> [CastAssignment] {
+        let widowID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        return [
+            CastAssignment(projectID: widowID, characterName: "Evelyn",
+                           roleLabel: "Lead · firm"),
+            CastAssignment(projectID: widowID, characterName: "Odessa",
+                           roleLabel: "Supporting · easy", approved: true),
+            CastAssignment(projectID: widowID, characterName: "Calvin",
+                           roleLabel: "Supporting · patient"),
+        ]
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
@@ -298,5 +415,7 @@ enum SampleData {
         for chapter in chapters { context.insert(chapter) }
         for character in characters { context.insert(character) }
         for chapter in makeScriptChapters() { context.insert(chapter) }
+        for voice in makeVoices() { context.insert(voice) }
+        for assignment in makeCastAssignments() { context.insert(assignment) }
     }
 }

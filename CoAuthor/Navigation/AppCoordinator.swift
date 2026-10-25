@@ -40,6 +40,10 @@ enum AppRoute: Hashable, Identifiable {
     case scriptChapters(projectID: UUID)
     case scriptReader(chapterID: UUID)
     case chapterRevision(chapterID: UUID)
+    case savedVoices(projectID: UUID?)
+    case voiceDetail(voiceID: UUID, projectID: UUID?)
+    case voiceEdit(voiceID: UUID)
+    case voiceCasting(projectID: UUID)
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue

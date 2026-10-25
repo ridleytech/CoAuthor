@@ -409,12 +409,86 @@ ScriptViewModel.swift` (list + reader VMs), `RevisionViewModel.swift`,
 
 ## M6 — Saved voices
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: voice list/detail, search, favorites, narrator assignment,
-  mock account capacity.
-- Design: `Full Content/Saved Voices`, `Saved Voice detail & casting picker`,
-  `Voices & casting detail`, `Voice Capacity/Saved Voices — *`.
+### Scope implemented
+
+- `Voice` model (origin/kind/roleTag, descriptor, summary, tags,
+  `sampleSeconds`, `isFavorite`, `isAvailable`, `designPrompt`,
+  `savedVoiceID`, local name/labels/notes, `assignedProjectID` +
+  `assignmentLabel`) and `CastAssignment` model (character, role label,
+  approved flag) added to `CoAuthorSchemaV1`.
+- `VoiceRepository` protocol + SwiftData implementation;
+  `VoiceCapacity`/`MockVoiceCapacity` — illustrative 8-of-10-slot
+  account capacity ("slots are not credits").
+- Saved Voices list per `Full Content/Saved Voices`: Library-tab root
+  (browse mode) or pushed with a casting context ("Choosing for
+  {project} → Series narrator"), Create Voice → M7 placeholder,
+  capacity card with slot progress bar, working search field,
+  "Sync ElevenLabs voices" → M12 placeholder, filter pills (All /
+  Favorites / Narrator / Custom / Source dropdowns + clear), count
+  line, voice cards (favorite toggle, tags, sample time, Details /
+  Favorite / Assign actions, ink border on the context project's
+  assigned voice, "Set default narrator"/"Edit local metadata" on
+  assigned voices), audition strip + "Use this voice" CTA in context
+  mode (assigns narrator + pops).
+- Voice detail per `Saved Voice detail & casting picker`: Audio tab
+  strip, availability line, capacity card, narrator card (favorited
+  badge, favorite/set-default buttons), audition strip with play/pause
+  toggle, original design prompt + saved voice ID, local name/labels/
+  notes card → `VoiceEditView` editor, "Remove from CoAuthor" (deletes
+  the local record), "Manage ElevenLabs Voices" → M12, sticky
+  "Use this voice — {project}" CTA when opened in casting context
+  (persists `project.narratorName`, `narratorConfirmed`, voice
+  assignment).
+- Casting detail per `Voices & casting detail` (Audio tab): "Find your
+  narrator.", capacity card, Create New Voice → M7 / Choose Saved Voice
+  → context Saved Voices, reusing-a-voice note, narrator suggestion
+  card (assigned voice or deterministic catalog suggestion, "Suggested"
+  - "Not generated" badges), audition sample card, Voice Design prompt
+    card (`project.voiceDesignPrompt`, Edit → M7), audition &
+    performance direction, cast assignments (Suggested/Approved badges
+    from `CastAssignment` records), casting-context note, manage/plan
+    rows, "Approval ≠ paid generation" card, sticky "Approve voice
+    description" CTA (persists `project.voicePromptApproved`, disables
+    after approval).
+- Audio tab across project screens now routes to the casting screen.
+
+### Design interpretations recorded
+
+- The audition player is cosmetic (play/pause toggle, fixed position) —
+  no audio preview exists until backend audition support (M7/M12).
+- "Assign" / "Use this voice" set the project's narrator and mark the
+  voice's assignment — single-narrator model; multi-voice casting is
+  not in the references.
+- Cast assignments render approval state only; per-character approval
+  toggles aren't specified in the reference, so badges are read-only.
+- The Library tab now hosts Saved Voices (Library is active in the
+  list design); the casting-context entry point is the Audio tab's
+  "Choose Saved Voice".
+- Capacity is a fixed mock (8/10, "Jordan's studio"); refresh/sync are
+  labeled placeholders.
+
+### Files
+
+- Added: `Models/Voice.swift` (+`CastAssignment`),
+  `Persistence/VoiceRepository.swift` (+`VoiceCapacity`,
+  `MockVoiceCapacity`), `Features/Voices/VoicesViewModel.swift` (list +
+  detail VMs), `CastingViewModel.swift`, `SavedVoicesView.swift`,
+  `VoiceDetailView.swift`, `VoiceEditView.swift`, `CastingView.swift`,
+  `VoiceComponents.swift` (capacity card, tag pills, audition strip,
+  search field)
+- Changed: `Models/Project.swift` (`voiceDesignPrompt`,
+  `voicePromptApproved`), `SchemaV1.swift` (+`Voice`, +`CastAssignment`), `Persistence/SampleData.swift` (10 voices +
+  Widow cast assignments), `Navigation/AppCoordinator.swift`
+  (`.savedVoices`, `.voiceDetail`, `.voiceEdit`, `.voiceCasting`),
+  `AppShell.swift` (destinations, Library root = Saved Voices),
+  `ProjectSectionTabs.swift` (Audio → casting)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M7 — Voice creation and casting
 
