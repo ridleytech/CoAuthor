@@ -112,6 +112,7 @@ struct PublishingKitView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 180)
             .clipped()
+            .accessibilityLabel("Selected thumbnail for \(project.title)")
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: Theme.Radius.image,

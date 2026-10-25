@@ -197,6 +197,8 @@ struct SettingsView: View {
             }
         }
         .frame(height: 6)
+        // The adjacent "N% used" text carries the value.
+        .accessibilityHidden(true)
     }
 
     // MARK: Preference + service cards

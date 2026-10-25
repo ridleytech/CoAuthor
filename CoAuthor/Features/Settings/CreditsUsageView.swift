@@ -106,6 +106,7 @@ struct CreditsUsageView: View {
                     }
                 }
                 .frame(height: 6)
+                .accessibilityHidden(true)
                 Text("\(credits.usedPercentLabel) · \(credits.resetLabel)")
                     .font(.caption)
                     .foregroundStyle(Color.caSecondary)

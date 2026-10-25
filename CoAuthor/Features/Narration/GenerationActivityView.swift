@@ -273,7 +273,7 @@ struct GenerationActivityView: View {
                 Image(systemName: "arrow.right")
                     .font(.caption.weight(.medium))
             }
-            .foregroundStyle(title == "Cancel" ? Color.red : Color.caInk)
+            .foregroundStyle(title == "Cancel" ? Color.caDestructive : Color.caInk)
         }
     }
 }

@@ -118,6 +118,7 @@ struct AudioReviewView: View {
                               ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 40))
                             .foregroundStyle(Color.caInk)
+                            .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
                     }
                     .buttonStyle(.plain)
                 }
@@ -248,6 +249,7 @@ struct AudioReviewView: View {
                 Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(Color.caInk)
+                    .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 2) {

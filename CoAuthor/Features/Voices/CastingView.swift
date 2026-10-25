@@ -203,6 +203,7 @@ struct CastingView: View {
                 Image(systemName: "play.circle.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(Color.caInk)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Audition sample")
                         .font(.subheadline.weight(.semibold))

@@ -165,6 +165,9 @@ struct RootView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .contentShape(Rectangle())
+                        .accessibilityAddTraits(
+                            tab == coordinator.selectedTab ? .isSelected : []
+                        )
                     }
                     .buttonStyle(.plain)
                 }

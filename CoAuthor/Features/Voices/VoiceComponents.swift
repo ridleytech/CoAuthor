@@ -82,6 +82,7 @@ struct VoiceAuditionStrip: View {
                     Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 36))
                         .foregroundStyle(Color.caInk)
+                        .accessibilityLabel(isPlaying ? "Pause" : "Play")
                 }
                 .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 2) {

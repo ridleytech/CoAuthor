@@ -157,6 +157,9 @@ struct NarrationView: View {
                                 chapter.isSelectedForGeneration
                                     ? Color.caInk : Color.caSecondary
                             )
+                            .accessibilityLabel(chapter.isSelectedForGeneration
+                                                ? "Deselect chapter"
+                                                : "Select chapter")
                     }
                     .buttonStyle(.plain)
                     Text("\(chapter.number). \(chapter.title)")
@@ -257,6 +260,7 @@ struct NarrationView: View {
                 Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(Color.caInk)
+                    .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 2) {

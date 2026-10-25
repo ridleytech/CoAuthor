@@ -188,6 +188,7 @@ struct ScriptReaderView: View {
                     Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 40))
                         .foregroundStyle(Color.caInk)
+                        .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
                 }
                 .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 2) {

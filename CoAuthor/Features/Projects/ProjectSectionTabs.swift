@@ -69,7 +69,9 @@ struct ProjectSectionTabs: View {
             Rectangle()
                 .fill(active ? Color.caInk : Color.clear)
                 .frame(height: 2)
+                .accessibilityHidden(true)
         }
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 }
 

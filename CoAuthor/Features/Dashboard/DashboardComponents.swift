@@ -68,6 +68,7 @@ struct ContinueCard: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 148)
                 .clipped()
+                .accessibilityLabel("\(project.title) cover")
         } else {
             // Fallback when a project has no cover art yet.
             ZStack(alignment: .bottomLeading) {

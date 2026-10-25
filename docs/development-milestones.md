@@ -997,3 +997,49 @@ pass, no build/test run). Provider/paid actions remain stubs.**
 
 - Scope: cross-screen consistency, accessibility, device testing,
   production readiness.
+M13 proceeded as a static audit only — builds/tests were off per
+standing instruction, so device testing and a simulator pass remain
+pending.
+
+### Findings and fixes
+
+- **VoiceOver labels added** to every icon-only control found by an
+  app-wide scan — all use dynamic labels that reflect state:
+  - Play/pause players: narration studio, audio review (x2),
+    script reader, shared audition strip (`VoiceAuditionStrip`),
+    cue detail player, asset-library player, voice-detail strip.
+  - Saved-voice favorite star: "Add/Remove {name} from favorites".
+  - Narration chapter checkbox: "Select/Deselect {title}"
+    (goes through `checkmark.square.fill`/`square` icons).
+  - Filter chevron: VoiceOver now hears the filter label.
+- **Decorative icons hidden** — `accessibilityHidden(true)` on
+  icons whose meaning is carried by adjacent text: play icons in
+  casting/voice-creation audition rows and the voice-creation mini
+  player, the activity chevron, top-bar red square, all progress
+  bars (credits %, capacity, color ramps — values stated in text),
+  and the underline bar in `ProjectSectionTabs` tab items.
+- **Cover art labeled** — `ProjectCard` covers read
+  "{title} cover"; the publishing-kit hero reads
+  "Selected thumbnail for {title}".
+- **Selected-state trait** — `.isSelected` added to
+  `ProjectSectionTabs` items and the bottom tab bar so VoiceOver
+  announces which tab/section is active.
+- **Consistency fix** — one raw `Color.red` in the activity feed's
+  Cancel action switched to `Color.caDestructive`; the scan
+  confirmed no other hard-coded colors outside `Theme.swift`.
+
+### Reviewed, no change needed
+
+- Arrow-right / chevron-right icons sit inside labeled text buttons
+  — VoiceOver already reads the label.
+- Tap targets: all icon buttons are 24–40pt glyphs inside
+  `contentShape(Rectangle)` hit areas on 44pt+ rows.
+- Dynamic Type: all text uses relative styles (`subheadline`,
+  `.caSerif`, etc.) or the theme's scaled tokens.
+- Status badges pair color with text/icons — no color-only
+  semantics.
+
+### Pending
+
+- Simulator VoiceOver + Accessibility Inspector pass, Dynamic Type
+  audit at AX sizes, and real-device check — requires a build.

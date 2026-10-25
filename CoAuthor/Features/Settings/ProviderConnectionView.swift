@@ -146,6 +146,7 @@ struct ProviderConnectionView: View {
                     }
                 }
                 .frame(height: 6)
+                .accessibilityHidden(true)
                 Text("\(Int(Double(slots.used) / Double(max(slots.total, 1)) * 100))% used"
                      + " · \(slots.total - slots.used) slots available")
                     .font(.caption)

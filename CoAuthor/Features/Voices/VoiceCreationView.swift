@@ -344,6 +344,7 @@ struct VoiceCreationView: View {
             Image(systemName: "play.circle.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(Color.caInk)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(viewModel.draftName) Preview \(audition.label.prefix(1))")
                     .font(.subheadline.weight(.semibold))
@@ -432,6 +433,7 @@ struct VoiceCreationView: View {
             Image(systemName: "play.circle.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(Color.caInk)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Preview \(audition.label.capitalized)")
                     .font(.subheadline.weight(.semibold))

@@ -242,6 +242,9 @@ struct SavedVoicesView: View {
                     Image(systemName: voice.isFavorite ? "star.fill" : "star")
                         .font(.subheadline)
                         .foregroundStyle(Color.caInk)
+                        .accessibilityLabel(voice.isFavorite
+                                          ? "Remove from favorites"
+                                          : "Mark as favorite")
                 }
                 .buttonStyle(.plain)
             }
