@@ -54,6 +54,12 @@ enum AppRoute: Hashable, Identifiable {
     case publishingKit(projectID: UUID)
     case exports(projectID: UUID)
     case assetLibrary
+    case manageAccount
+    case creditsUsage
+    case providerConnection
+    case notificationSettings
+    case deleteAccount
+    case createAccount
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue

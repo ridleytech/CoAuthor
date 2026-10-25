@@ -11,7 +11,8 @@ enum CoAuthorSchemaV1: VersionedSchema {
          Outline.self, OutlineChapter.self, OutlineCharacter.self,
          ScriptChapter.self, Voice.self, CastAssignment.self,
          GenerationJob.self, SoundCue.self, PublishingKit.self,
-         SoundAsset.self, ExportRecord.self]
+         SoundAsset.self, ExportRecord.self, AccountProfile.self,
+         NotificationSettings.self]
     }
 }
 

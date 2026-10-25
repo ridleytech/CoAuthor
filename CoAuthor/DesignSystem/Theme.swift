@@ -53,6 +53,10 @@ extension Color {
     static let caCoverFallback = Color(red: 0.13, green: 0.16, blue: 0.18)
     /// Form input fill — near-white with a hint of gray.
     static let caField = Color(red: 0.972, green: 0.972, blue: 0.976)
+    /// Destructive text — "Delete account", "Disconnect".
+    static let caDestructive = Color(red: 0.75, green: 0.2, blue: 0.15)
+    /// Green note fill — "preferences saved" confirmations.
+    static let caNoteSuccess = Color(red: 0.91, green: 0.965, blue: 0.925)
 }
 
 extension Font {

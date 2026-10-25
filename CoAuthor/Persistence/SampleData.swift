@@ -653,5 +653,11 @@ enum SampleData {
         context.insert(makePublishingKit())
         for asset in makeSoundAssets() { context.insert(asset) }
         context.insert(makeExportRecord())
+        context.insert(AccountProfile(
+            name: "Jordan Davis",
+            email: "jordan@example.com",
+            defaultNarrator: "Marlene"
+        ))
+        context.insert(NotificationSettings())
     }
 }

@@ -31,7 +31,11 @@ struct RootView: View {
                             .toolbar(.hidden, for: .navigationBar)
                     }
                 case .settings:
-                    tabStack(for: .settings, title: "Settings", milestone: "M11")
+                    NavigationStack(path: coordinator.path(for: .settings)) {
+                        SettingsView()
+                            .navigationDestination(for: AppRoute.self, destination: destination)
+                            .toolbar(.hidden, for: .navigationBar)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -118,6 +122,18 @@ struct RootView: View {
             ExportsView(projectID: projectID)
         case .assetLibrary:
             AssetLibraryView()
+        case .manageAccount:
+            ManageAccountView()
+        case .creditsUsage:
+            CreditsUsageView()
+        case .providerConnection:
+            ProviderConnectionView()
+        case .notificationSettings:
+            NotificationSettingsView()
+        case .deleteAccount:
+            DeleteAccountView()
+        case .createAccount:
+            CreateAccountView()
         case .narration(let projectID):
             NarrationView(projectID: projectID)
         case .reviewItem:

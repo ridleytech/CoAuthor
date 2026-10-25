@@ -827,11 +827,93 @@ per maintainer request)**
 
 ## M11 — Account and settings
 
-**Status: Not started**
+**Status: Implemented (unverified — code-only pass, no build/test run
+per maintainer request)**
 
 - Scope: authentication screens, profile, connections, credits,
   preferences.
 - Design: `Settings`, `Account/*`, `Auth/*`, `Credits & Usage/*`.
+
+### Implemented
+
+- **Settings root** (tab, replaces the M11 placeholder): profile card
+  (initials avatar, name, email → Manage account), Credits & Usage
+  summary card with the design's illustrative figures (72,400 /
+  27,600 of 100,000, progress bar, reset date, "Illustrative data ·
+  not a live balance" footnote), Creative preferences rows (story
+  defaults, default narrator → Saved Voices, document templates,
+  Saved Voices), Account & services rows, Support rows with real app
+  version, Danger zone (Sign out → create-account screen, Delete
+  account → reauth flow).
+- **Manage account** — profile block, Edit profile / Change email /
+  Security / Linked sign-in rows (M12 placeholders), plan & billing
+  card ("Plan: Not available · Price: Not available" per design),
+  Delete account link.
+- **ElevenLabs connection** — connected card (masked key `•••• 9b41`,
+  last sync, Test connection → local status note), custom-voice
+  capacity card derived from the real voice count (8/10 etc.),
+  Saved Voices / Voice-type limits / Manage account / Credits &
+  Usage / Sync voices rows (sync shows the design's green
+  confirmation note), default narrator, Reconnect / Disconnect → M12.
+- **Notifications** — persisted `NotificationSettings` toggles
+  (Generation finished / failed / low credits; Security alerts
+  locked on per design), Email / Push delivery channels, "Save
+  preferences" → green saved note.
+- **Credits & Usage** — illustrative balance card (Refresh → M12),
+  CoAuthor-subscription separation card, example breakdown, and
+  recent-activity cards backed by **real `GenerationJob` records**
+  with illustrative credit amounts ("Open result" routes to linked
+  chapters; failed → "View details" placeholder). "Open Generation
+  activity" switches to the Activity tab.
+- **Delete account reauth** — warning card, data-loss explainer,
+  "Export projects first" and Privacy Policy links, working
+  password field with Show/Hide + focus ring, Continue gated on
+  input → M12 final-confirmation placeholder, Cancel pops.
+- **Create account** — name/email/password fields with the design's
+  inline red validation (full name, valid email, 12+ mixed-case +
+  number), required ToS checkbox, Apple/Google + Sign-in → M12
+  placeholders. Validation is real; account creation needs the
+  backend.
+- Models: `AccountProfile` (Jordan Davis seeded; auto-created for
+  pre-M11 dev stores) and `NotificationSettings` in
+  `CoAuthorSchemaV1`; `AccountRepository`; `CreditsSnapshot`
+  illustrative-data struct kept out of persistence on purpose.
+- Routes: `.manageAccount`, `.creditsUsage`, `.providerConnection`,
+  `.notificationSettings`, `.deleteAccount`, `.createAccount`;
+  `SettingsBackBar` + `SettingsNavRow` shared chrome.
+
+### Interpretations
+
+- The seven `Credits & Usage` state variants (Loading / Low /
+  Exhausted / Stale / Usage based / Not connected) are states of one
+  card — the Connected design is implemented; state plumbing arrives
+  with real balances in M12.
+- All credit figures are labeled "Illustrative" exactly as the
+  design requires — no fake "live" numbers.
+- "Sign out" routes to the auth screen — the only honest mock of a
+  signed-out state this milestone provides.
+- Job-credit amounts are illustrative mappings by job kind, noted
+  in the UI as such.
+
+### Files
+
+- Added: `Models/AccountProfile.swift`,
+  `Models/NotificationSettings.swift`,
+  `Persistence/AccountRepository.swift` (+`CreditsSnapshot`),
+  `Features/Settings/SettingsViewModel.swift` (7 VMs),
+  `SettingsView.swift`, `SettingsComponents.swift`,
+  `ManageAccountView.swift`, `CreditsUsageView.swift`,
+  `NotificationsView.swift`, `ProviderConnectionView.swift`,
+  `DeleteAccountView.swift`, `CreateAccountView.swift`
+- Changed: `SchemaV1.swift` (+2 models),
+  `Persistence/SampleData.swift` (profile + notification seeds),
+  `Navigation/AppCoordinator.swift` (+6 routes), `AppShell.swift`
+  (Settings root + destinations), `DesignSystem/Theme.swift`
+  (+`caDestructive`, `caNoteSuccess`)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M12 — Backend integration
 
