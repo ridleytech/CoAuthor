@@ -37,6 +37,9 @@ enum AppRoute: Hashable, Identifiable {
     case outline(projectID: UUID)
     case chapterEdit(chapterID: UUID)
     case chapterList(outlineID: UUID)
+    case scriptChapters(projectID: UUID)
+    case scriptReader(chapterID: UUID)
+    case chapterRevision(chapterID: UUID)
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue

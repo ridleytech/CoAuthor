@@ -340,11 +340,72 @@ OutlineViewModel.swift`, `OutlineView.swift`, `ChapterListView.swift`,
 
 ## M5 — Script
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: chapter list, script reader/editor, persistence, word count
-  and revision tracking.
-- Design: `Full Content/Script reader`, `Full-screen chapter edit & revision`.
+### Scope implemented
+
+- `ScriptChapter` model (body, `revision`, `audioRevision`,
+  `audioSeconds`/`audioPosition`, computed `wordCount`,
+  `estimatedSeconds` at ~150wpm, `isAudioOutdated`) added to
+  `CoAuthorSchemaV1`.
+- `ScriptRepository` protocol + SwiftData implementation;
+  `MockScriptGenerator` builds a deterministic draft from the approved
+  outline's chapters on first open (no AI calls).
+- Script chapter list (`ScriptChapterListView`): Story tab strip,
+  "Your script." title, per-chapter rows (number, title, words · est.
+  duration · revision, Outdated badge, chevron) → reader.
+- Script reader per `Full Content/Script reader`: serif chapter title,
+  meta line ("Chapter 1 / 10 · N words · ~m:ss · Script rN · Saved"),
+  "Outdated" notice card when `audioRevision < revision` (audio rN vs
+  current rN explained, "Review affected assets" → M8 placeholder),
+  reader card ("READ · SETTING" eyebrow + serif paragraphs), reader-tools
+  card ("Revisions (N)" → M12 placeholder), audio strip (play/pause
+  toggle, narrator · ElevenLabs · 1×, position / duration), sticky
+  "Edit chapter" CTA.
+- Full-screen revision editor per `Full-screen chapter edit & revision`:
+  breadcrumb ("title · rN → proposed rN+1 · Full-screen editor · Not
+  applied"), Before/After cards (serif original vs editable proposed
+  TextEditor, "Not yet applied" badge, "Keep original" discard), revision
+  actions + production rows → M12 placeholders, "Try another revision"
+  (cycles deterministic mock variants), audio-impact card, "Accept
+  revision" persists the proposal as the next revision — leaving older
+  audio marked outdated.
+- Outline "Approve outline and generate script" CTA now routes to the
+  script chapter list; approval + first-open generation produce the
+  draft.
+
+### Design interpretations recorded
+
+- Reader shows real computed values (word count, ~150wpm duration) —
+  the design's "812 words · ~5:42" is sample content, so numbers differ
+  from the reference.
+- The audio strip is display-only with a play/pause toggle — no audio
+  file exists yet (playback is M8). Position/duration persist on the
+  model so the strip looks like the reference.
+- The revision screen edits the whole chapter body rather than a single
+  selected passage — the design's before/after is a passage-level diff,
+  which needs backend rewrite support (M12) to be meaningful.
+- Script generation happens lazily on first open of the script list
+  after outline approval — no separate "generate" screen exists in the
+  references.
+
+### Files
+
+- Added: `Models/ScriptChapter.swift`, `Persistence/ScriptRepository.swift`
+  (repository + `MockScriptGenerator`), `Features/Script/
+ScriptViewModel.swift` (list + reader VMs), `RevisionViewModel.swift`,
+  `ScriptChapterListView.swift`, `ScriptReaderView.swift`,
+  `RevisionView.swift`
+- Changed: `SchemaV1.swift` (+`ScriptChapter`),
+  `Persistence/SampleData.swift` (design-matching script for The Numbers
+  Widow: ch1 r4, audio r3, mid-playback), `Navigation/AppCoordinator.swift`
+  (`.scriptChapters`, `.scriptReader`, `.chapterRevision`), `AppShell.swift`
+  (destinations), `Features/Outline/OutlineView.swift` (CTA → script list)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M6 — Saved voices
 

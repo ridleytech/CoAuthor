@@ -240,6 +240,52 @@ enum SampleData {
         return (outline, chapters, characters)
     }
 
+    /// Script content for "The Numbers Widow" matching the Script-reader
+    /// design reference: chapter 1 at r4 with audio generated from r3
+    /// (outdated) and playback mid-chapter.
+    static func makeScriptChapters() -> [ScriptChapter] {
+        let projectID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        let envelopeBody = [
+            "The envelope was waiting beneath the sugar bowl. Evelyn knew it "
+                + "had not been there when she left for the funeral. She had "
+                + "washed the bowl that morning, dried its scalloped rim with "
+                + "the good towel, and set it squarely between the salt and "
+                + "the radio. Now one corner of brown paper showed beneath it, "
+                + "darkened by a thumbprint.",
+            "Outside, a bus sighed at the curb. November had stripped the "
+                + "maple in front of the house down to its black arithmetic. "
+                + "Evelyn kept her coat on. From the hallway came the small, "
+                + "deliberate sound of her daughter turning a page.",
+            "She lifted the bowl. No stamp. No return address. Just her name, "
+                + "written by someone who had taken care not to make it look "
+                + "familiar.",
+        ].joined(separator: "\n\n")
+        let titles = [
+            "The Envelope", "The Basement Desk", "Odessa on Dexter",
+            "The House Key", "The Work", "A Name in the Ledger",
+            "Sunday Collections", "The Second Set of Books",
+            "What the River Keeps", "A Balance Owed",
+        ]
+        return titles.enumerated().map { pair in
+            let index = pair.offset
+            return ScriptChapter(
+                projectID: projectID,
+                number: index + 1,
+                title: pair.element,
+                settingLabel: "DETROIT, NOVEMBER 1972",
+                body: index == 0
+                    ? envelopeBody
+                    : MockScriptGenerator.proseForSeed(
+                        title: pair.element, number: index + 1
+                    ),
+                revision: 4,
+                audioRevision: index == 0 ? 3 : (index < 3 ? 4 : nil),
+                audioSeconds: index == 0 ? 342 : (index < 3 ? 300 : 0),
+                audioPosition: index == 0 ? 84 : 0
+            )
+        }
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
@@ -251,5 +297,6 @@ enum SampleData {
         context.insert(outline)
         for chapter in chapters { context.insert(chapter) }
         for character in characters { context.insert(character) }
+        for chapter in makeScriptChapters() { context.insert(chapter) }
     }
 }

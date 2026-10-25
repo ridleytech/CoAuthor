@@ -8,7 +8,8 @@ enum CoAuthorSchemaV1: VersionedSchema {
 
     static var models: [any PersistentModel.Type] {
         [Project.self, ReviewItem.self, Idea.self,
-         Outline.self, OutlineChapter.self, OutlineCharacter.self]
+         Outline.self, OutlineChapter.self, OutlineCharacter.self,
+         ScriptChapter.self]
     }
 }
 

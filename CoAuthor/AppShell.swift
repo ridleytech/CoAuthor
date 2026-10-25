@@ -76,6 +76,12 @@ struct RootView: View {
             ChapterEditView(chapterID: chapterID)
         case .chapterList(let outlineID):
             ChapterListView(outlineID: outlineID)
+        case .scriptChapters(let projectID):
+            ScriptChapterListView(projectID: projectID)
+        case .scriptReader(let chapterID):
+            ScriptReaderView(chapterID: chapterID)
+        case .chapterRevision(let chapterID):
+            RevisionView(chapterID: chapterID)
         case .narration:
             DevelopmentPlaceholderView(title: "Narration studio", milestone: "M8")
         case .reviewItem:

@@ -76,7 +76,7 @@ struct OutlineView: View {
                     : "Approve outline and generate script"
             ) {
                 viewModel.approve()
-                coordinator.push(.placeholder(title: "Script workspace", milestone: "M5"))
+                coordinator.push(.scriptChapters(projectID: project.id))
             }
         }
     }
