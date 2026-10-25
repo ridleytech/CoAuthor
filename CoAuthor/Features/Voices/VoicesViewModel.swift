@@ -177,6 +177,7 @@ final class VoiceDetailViewModel {
     let projectID: UUID?
     private let projectsRepository: any DashboardRepository?
     private let voiceRepository: any VoiceRepository
+    private let backendClient: any BackendClient
 
     private(set) var voice: Voice?
     private(set) var contextProject: Project?
@@ -189,12 +190,14 @@ final class VoiceDetailViewModel {
         voiceID: UUID,
         projectID: UUID? = nil,
         projectsRepository: (any DashboardRepository)? = nil,
-        voiceRepository: any VoiceRepository
+        voiceRepository: any VoiceRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.voiceID = voiceID
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.voiceRepository = voiceRepository
+        self.backendClient = backendClient
     }
 
     var subtitle: String {
@@ -244,9 +247,18 @@ final class VoiceDetailViewModel {
         try? voiceRepository.saveChanges()
     }
 
-    /// Removes only the local reference — provider voice unaffected.
+    /// Removes the local reference; in backend mode also tells the
+    /// API (which deletes the provider voice in live provider mode).
+    /// Local removal proceeds regardless of the remote result.
     func removeFromCoAuthor() {
         guard let voice else { return }
+        let providerID = voice.savedVoiceID
+        if BackendConfiguration.shared.useBackend && !providerID.isEmpty {
+            Task {
+                let _: BackendDTO.MutationResponse? = try? await backendClient
+                    .delete("/v1/voices/\(providerID)")
+            }
+        }
         try? voiceRepository.delete(voice)
     }
 }

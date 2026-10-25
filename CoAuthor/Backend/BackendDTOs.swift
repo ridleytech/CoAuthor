@@ -171,6 +171,32 @@ enum BackendDTO {
     struct ExportResponse: Decodable {
         var status: String
         var job: Job
+        /// The packaged zip — base64, matching how audio is
+        /// returned inline until S3 package delivery exists.
+        var package: Package?
+
+        struct Package: Decodable {
+            var format: String
+            var fileCount: Int
+            var bytes: Int
+            var files: [String]
+            var base64: String
+
+            var zipData: Data? { Data(base64Encoded: base64) }
+        }
+    }
+
+    // MARK: POST /v1/voices:sync · DELETE mutations
+
+    struct VoiceSyncResponse: Decodable {
+        var status: String
+        var voices: [Voice]
+    }
+
+    struct MutationResponse: Decodable {
+        var status: String
+        var detail: String?
+        var development: Bool?
     }
 
     // MARK: POST /v1/auth/signin|signup

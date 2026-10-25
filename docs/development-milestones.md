@@ -1143,3 +1143,55 @@ hydration is idempotent and never clobbers local edits:
 - Export file packaging (documents → actual files/zip).
 - Account deletion mutation; voice remove/sync mutations to
   provider.
+
+## M16 — Export packaging + provider mutations
+
+**Status: Code complete — backend verified; app build pending**
+
+### Backend (gitignored scaffold)
+
+- `src/packaging/zip.mjs` — dependency-free ZIP builder: CRC32 in
+  pure JS + `zlib.deflateRawSync` compression. Verified end-to-end:
+  `unzip -l`/`unzip -p` on a generated archive extract correctly.
+- `src/packaging/package.mjs` — assembles the export package from
+  the served data: `outline.txt`, `sound-cues.csv`, `voices.txt`,
+  `project.json`, `README.txt`.
+- `POST /v1/exports` now returns `{job, package}` — the package is
+  a real zip in base64 (same convention as inline audio).
+- Provider mutations:
+  - `POST /v1/voices:sync` — live mode returns the real ElevenLabs
+    library; stub returns the catalog (flagged `simulated`).
+  - `DELETE /v1/voices/{id}` — live mode calls ElevenLabs DELETE;
+    stub mode removes the row from the in-memory catalog so
+    subsequent GETs reflect it.
+  - `DELETE /v1/account` — dev-auth acknowledgment; documented as
+    having no identity store.
+
+### App
+
+- `BackendClient.delete` added (GET/POST/DELETE now covered).
+- `ExportsViewModel` — backend exports write the returned zip to
+  the temp directory; `ExportRecord.sizeLabel`/`fileCount` update
+  from the real package; the exports screen swaps "Download
+  package" for a working **ShareLink** when a package exists.
+- `VoiceDetailViewModel.removeFromCoAuthor` — DELETEs the provider
+  voice (by `savedVoiceID`) in backend mode before removing the
+  local record.
+- `ProviderConnectionViewModel` — "Test connection" pings
+  `GET /health` and reports per-provider live/stub status; "Sync
+  voices" posts `/v1/voices:sync` and merges new catalog entries
+  (name-deduped, local labels preserved).
+- `DeleteAccountViewModel` — Continue calls `DELETE /v1/account`
+  in backend mode; `serverError` surfaces failures and blocks
+  proceeding.
+
+### Verified
+
+- Real zip produced and extracted via `unzip` (5 files, deflate).
+- Voice delete removes from catalog; sync reflects it.
+- Pending: app build, real ElevenLabs mutation calls.
+
+### Still deferred
+
+- Real identity provider (Cognito/JWT).
+- S3 delivery for export packages (currently inline base64).

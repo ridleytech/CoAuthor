@@ -130,14 +130,24 @@ struct DeleteAccountView: View {
                     .padding(.horizontal, Theme.Spacing.page)
                     .padding(.vertical, Theme.Spacing.cardGap)
                 }
+                if let error = viewModel.serverError {
+                    Text("! \(error)")
+                        .font(.caption)
+                        .foregroundStyle(Color.caDestructive)
+                        .padding(.horizontal, Theme.Spacing.page)
+                }
                 BottomCTA(
                     title: "Continue",
                     enabled: viewModel.canContinue
                 ) {
-                    coordinator.push(.placeholder(
-                        title: "Final deletion confirmation",
-                        milestone: "M12"
-                    ))
+                    Task {
+                        if await viewModel.confirmDeletion() {
+                            coordinator.push(.placeholder(
+                                title: "Final deletion confirmation",
+                                milestone: "M12"
+                            ))
+                        }
+                    }
                 }
                 Button("Cancel") {
                     coordinator.pop()

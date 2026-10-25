@@ -81,14 +81,19 @@ final class ManageAccountViewModel {
 @MainActor
 final class ProviderConnectionViewModel {
     private let voiceRepository: any VoiceRepository
+    private let backendClient: any BackendClient
 
     let credits = CreditsSnapshot()
     private(set) var voiceCount = 0
     /// Shown after "Test connection" or "Sync voices".
     var statusNote: String?
 
-    init(voiceRepository: any VoiceRepository) {
+    init(
+        voiceRepository: any VoiceRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
+    ) {
         self.voiceRepository = voiceRepository
+        self.backendClient = backendClient
     }
 
     var capacitySlots: (used: Int, total: Int) {
@@ -99,19 +104,70 @@ final class ProviderConnectionViewModel {
         voiceCount = (try? voiceRepository.fetchVoices().count) ?? 0
     }
 
-    /// Local "test" — updates the sync timestamp only; a real
-    /// provider call is M12.
+    /// Backend mode pings GET /health; otherwise a local note.
     func testConnection() {
-        statusNote = "✓ Connection looks good. Last sync updated."
+        guard BackendConfiguration.shared.useBackend else {
+            statusNote = "✓ Connection looks good. Last sync updated."
+            return
+        }
+        Task {
+            struct Health: Decodable {
+                var status: String
+                var providers: Providers?
+                struct Providers: Decodable {
+                    var mode: String
+                    var openai: String
+                    var elevenlabs: String
+                }
+            }
+            do {
+                let health: Health = try await backendClient.get("/health")
+                statusNote = "✓ Backend reachable"
+                    + (health.providers.map {
+                        " · OpenAI \($0.openai), ElevenLabs \($0.elevenlabs)"
+                    } ?? "")
+            } catch {
+                statusNote = "! Backend unreachable — check the base URL."
+            }
+        }
     }
 
+    /// Backend mode posts /v1/voices:sync and merges the returned
+    /// catalog (deduped by name); otherwise a local recount.
     func syncVoices() {
-        voiceCount = (try? voiceRepository.fetchVoices().count) ?? 0
-        statusNote = "✓ Synced: \(voiceCount) account voices "
-            + "(\(voiceCount) custom, 0 catalog). Local labels and "
-            + "favorites are preserved."
+        guard BackendConfiguration.shared.useBackend else {
+            voiceCount = (try? voiceRepository.fetchVoices().count) ?? 0
+            statusNote = "✓ Synced: \(voiceCount) account voices "
+                + "(\(voiceCount) custom, 0 catalog). Local labels and "
+                + "favorites are preserved."
+            return
+        }
+        Task {
+            do {
+                let response: BackendDTO.VoiceSyncResponse = try await backendClient
+                    .post("/v1/voices:sync", body: EmptyBody())
+                var names = Set(
+                    try voiceRepository.fetchVoices().map(\.name)
+                )
+                var added = 0
+                for dto in response.voices where !names.contains(dto.name) {
+                    try? voiceRepository.insert(dto.model())
+                    names.insert(dto.name)
+                    added += 1
+                }
+                voiceCount = (try? voiceRepository.fetchVoices().count) ?? 0
+                statusNote = "✓ Synced from backend: \(voiceCount) voices"
+                    + (added > 0 ? " (\(added) new)" : "")
+                    + ". Local labels and favorites preserved."
+            } catch {
+                statusNote = "! Sync failed — backend unreachable."
+            }
+        }
     }
 }
+
+/// Empty JSON object for POSTs that take no payload.
+private struct EmptyBody: Encodable {}
 
 /// Backs the Notifications screen — persisted toggles + save.
 @Observable
@@ -230,14 +286,40 @@ final class CreditsUsageViewModel {
 }
 
 /// Backs the delete-account reauthentication screen — password
-/// field and confirmation gating (deletion itself is M12 backend).
+/// field and confirmation gating. In backend mode, Continue calls
+/// DELETE /v1/account (dev auth — no identity store exists).
 @Observable
 @MainActor
 final class DeleteAccountViewModel {
+    private let backendClient: any BackendClient
+
     var password = ""
     var showPassword = false
+    private(set) var deletionConfirmed = false
+    var serverError: String?
+
+    init(backendClient: any BackendClient = URLSessionBackendClient()) {
+        self.backendClient = backendClient
+    }
 
     var canContinue: Bool { !password.isEmpty }
+
+    /// Posts the deletion when backend mode is on; returns true so
+    /// the caller can proceed to the final confirmation either way
+    /// (mock mode keeps the placeholder path).
+    @discardableResult
+    func confirmDeletion() async -> Bool {
+        guard BackendConfiguration.shared.useBackend else { return true }
+        do {
+            let response: BackendDTO.MutationResponse = try await backendClient
+                .delete("/v1/account")
+            deletionConfirmed = response.status == "deleted"
+            return deletionConfirmed
+        } catch {
+            serverError = "Couldn't reach the server — try again."
+            return false
+        }
+    }
 }
 
 /// Backs the create-account screen — field validation matching the

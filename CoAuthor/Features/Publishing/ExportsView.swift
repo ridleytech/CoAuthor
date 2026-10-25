@@ -228,21 +228,35 @@ struct ExportsView: View {
                         .font(.caption)
                         .foregroundStyle(Color.caSecondary)
                     Divider().overlay(Color.caHairline)
-                    Button {
-                        coordinator.push(.placeholder(
-                            title: "Package download",
-                            milestone: "M12"
-                        ))
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("Download package")
-                                .font(.subheadline.weight(.medium))
-                            Image(systemName: "arrow.right")
-                                .font(.caption.weight(.medium))
+                    if let url = viewModel.packageFileURL {
+                        // Real package — share sheet hands off the zip.
+                        ShareLink(item: url) {
+                            HStack(spacing: 6) {
+                                Text("Share package")
+                                    .font(.subheadline.weight(.medium))
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.caption.weight(.medium))
+                            }
+                            .foregroundStyle(Color.caInk)
                         }
-                        .foregroundStyle(Color.caInk)
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            coordinator.push(.placeholder(
+                                title: "Package download",
+                                milestone: "M12"
+                            ))
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Download package")
+                                    .font(.subheadline.weight(.medium))
+                                Image(systemName: "arrow.right")
+                                    .font(.caption.weight(.medium))
+                            }
+                            .foregroundStyle(Color.caInk)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 } else {
                     Text("No exports yet — prepare a package to see it here.")
                         .font(.subheadline)

@@ -352,6 +352,10 @@ final class ExportsViewModel {
         latestExport = export
     }
 
+    /// The packaged zip written to disk — exposed for a ShareLink
+    /// on the exports screen. Nil until a backend export succeeds.
+    private(set) var packageFileURL: URL?
+
     private func postExportJob(project: Project, export: ExportRecord) async {
         struct Payload: Encodable {
             let projectTitle: String
@@ -366,6 +370,21 @@ final class ExportsViewModel {
             try? generationRepository.insert(
                 response.job.model(projectID: project.id)
             )
+            // The response carries a real zip — write it beside the
+            // export record so the UI can share it.
+            if let zipData = response.package?.zipData {
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(
+                        "\(project.title) package.zip"
+                    )
+                try? zipData.write(to: url)
+                packageFileURL = url
+                export.sizeLabel =
+                    String(format: "%.1f KB", Double(zipData.count) / 1024)
+                export.fileCount = response.package?.fileCount
+                    ?? export.fileCount
+                try? publishingRepository.saveChanges()
+            }
         } catch {
             insertLocalJob(project: project)
         }
