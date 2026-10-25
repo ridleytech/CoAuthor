@@ -29,3 +29,6 @@ fastlane/test_output
 
 # Designs
 Designs/
+
+# Local backend scaffold
+backend/
