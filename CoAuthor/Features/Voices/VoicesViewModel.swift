@@ -9,6 +9,7 @@ final class VoicesViewModel {
     let projectID: UUID?
     private let projectsRepository: any DashboardRepository?
     private let voiceRepository: any VoiceRepository
+    private let backendClient: any BackendClient
 
     private(set) var voices: [Voice] = []
     private(set) var contextProject: Project?
@@ -62,11 +63,13 @@ final class VoicesViewModel {
     init(
         projectID: UUID? = nil,
         projectsRepository: (any DashboardRepository)? = nil,
-        voiceRepository: any VoiceRepository
+        voiceRepository: any VoiceRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.voiceRepository = voiceRepository
+        self.backendClient = backendClient
     }
 
     var subtitle: String {
@@ -113,9 +116,34 @@ final class VoicesViewModel {
             if let projectID {
                 contextProject = try projectsRepository?.fetchProject(id: projectID)
             }
+            if BackendConfiguration.shared.useBackend {
+                Task { await hydrateVoices() }
+            }
             loadError = nil
         } catch {
             loadError = "Couldn't load saved voices."
+        }
+    }
+
+    /// Backend path — merges the catalog from `GET /v1/voices`,
+    /// deduped by name so repeated syncs and locally-created voices
+    /// are preserved.
+    private func hydrateVoices() async {
+        do {
+            let dtos: [BackendDTO.Voice] = try await backendClient
+                .get("/v1/voices")
+            // Re-fetch inside the async gap in case the store changed
+            // while the request was in flight.
+            var names = Set(
+                try voiceRepository.fetchVoices().map(\.name)
+            )
+            for dto in dtos where !names.contains(dto.name) {
+                try? voiceRepository.insert(dto.model())
+                names.insert(dto.name)
+            }
+            voices = try voiceRepository.fetchVoices()
+        } catch {
+            // Keep the local catalog — backend unreachable.
         }
     }
 

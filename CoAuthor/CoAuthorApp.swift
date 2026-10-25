@@ -17,7 +17,11 @@ struct CoAuthorApp: App {
         let schema = CoAuthorSchema.current
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            container = try ModelContainer(for: schema, configurations: [configuration])
+            container = try ModelContainer(
+                for: schema,
+                migrationPlan: CoAuthorMigrationPlan.self,
+                configurations: [configuration]
+            )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

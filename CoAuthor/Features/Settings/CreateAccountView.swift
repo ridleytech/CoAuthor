@@ -39,12 +39,20 @@ struct CreateAccountView: View {
                     passwordBlock
                     termsRow
 
+                    if let serverError = viewModel.serverError {
+                        Text("! \(serverError)")
+                            .font(.caption)
+                            .foregroundStyle(Color.caDestructive)
+                    }
+
                     Button("Create account") {
-                        if viewModel.submit() {
-                            coordinator.push(.placeholder(
-                                title: "Account creation",
-                                milestone: "M12"
-                            ))
+                        Task {
+                            if await viewModel.submit() {
+                                coordinator.push(.placeholder(
+                                    title: "Account creation",
+                                    milestone: "M12"
+                                ))
+                            }
                         }
                     }
                     .buttonStyle(CAPrimaryButtonStyle(fullWidth: true))

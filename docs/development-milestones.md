@@ -1094,3 +1094,52 @@ hydration is idempotent and never clobbers local edits:
 - S3/object storage for generated audio (returned inline for now).
 - Voices catalog, document generation, exports packaging, auth.
 - `CoAuthorSchemaV1` version bump before any shipped store.
+
+## M15 — Remaining deferred items
+
+**Status: Code complete — backend verified; app build pending**
+
+### Backend (gitignored scaffold)
+
+- `GET /v1/voices` — stub catalog mirrors `SampleData.makeVoices`
+  (10 voices); live mode maps the real ElevenLabs `/v1/voices`
+  library onto the app's Voice DTO shape.
+- `POST /v1/projects/{id}/documents/{kind}:generate` — OpenAI
+  produces spoiler-free markdown document bodies in live mode.
+- `POST /v1/exports` — returns a GenerationJob-shaped record; real
+  file packaging still pending.
+- `POST /v1/auth/signin|signup` — development auth only: a `dev_`
+  token + echoed profile; documented as pre-IdP.
+- `AUDIO_STORAGE=inline|s3` + `src/storage/s3.mjs` — SigV4-signed
+  PUT upload via pure `node:crypto` (no AWS SDK); audio routes
+  return `audioUrl` + bytes instead of `audioBase64` when enabled.
+- `matchRoute` now extracts path params (`{kind}:generate`).
+
+### App
+
+- `BackendClient.post` + DTOs: Voice, ExportResponse, AuthSession,
+  DocumentResponse.
+- `VoicesViewModel` — hydrates `/v1/voices` in backend mode,
+  deduped by name so locally created voices survive.
+- `ExportsViewModel` — posts `/v1/exports` in backend mode and
+  records the returned job; local job fallback on failure.
+- `CreateAccountViewModel` — `submit()` is now async: validates,
+  then posts `/v1/auth/signup` in backend mode; `serverError`
+  surfaces API failures; mock mode keeps the placeholder flow.
+- **Schema versioning** — `CoAuthorSchemaV2` (same model set —
+  the bump formalizes the accumulated additive models) +
+  `CoAuthorMigrationPlan` lightweight stage; `ModelContainer` now
+  takes the plan. Future schema edits get a real migration path.
+
+### Verified
+
+- Handler-level smoke: all new routes in stub mode, path-param
+  extraction, auth validation, storage status in health.
+- Pending: real-key provider calls, S3 credentials, app build.
+
+### Still deferred
+
+- Real identity provider (Cognito/JWT) — auth routes are dev-only.
+- Export file packaging (documents → actual files/zip).
+- Account deletion mutation; voice remove/sync mutations to
+  provider.

@@ -263,6 +263,7 @@ final class ExportsViewModel {
     private let cueRepository: any CueRepository
     private let scriptRepository: any ScriptRepository
     private let generationRepository: any GenerationRepository
+    private let backendClient: any BackendClient
 
     private(set) var project: Project?
     private(set) var latestExport: ExportRecord?
@@ -277,7 +278,8 @@ final class ExportsViewModel {
         publishingRepository: any PublishingRepository,
         cueRepository: any CueRepository,
         scriptRepository: any ScriptRepository,
-        generationRepository: any GenerationRepository
+        generationRepository: any GenerationRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
@@ -285,6 +287,7 @@ final class ExportsViewModel {
         self.cueRepository = cueRepository
         self.scriptRepository = scriptRepository
         self.generationRepository = generationRepository
+        self.backendClient = backendClient
     }
 
     /// "N Outdated" narration count.
@@ -340,6 +343,35 @@ final class ExportsViewModel {
             status: "Complete"
         )
         try? publishingRepository.insertExport(export)
+        if BackendConfiguration.shared.useBackend {
+            // Backend path — the API records the package job.
+            Task { await postExportJob(project: project, export: export) }
+        } else {
+            insertLocalJob(project: project)
+        }
+        latestExport = export
+    }
+
+    private func postExportJob(project: Project, export: ExportRecord) async {
+        struct Payload: Encodable {
+            let projectTitle: String
+            let fileCount: Int
+        }
+        do {
+            let response: BackendDTO.ExportResponse = try await backendClient
+                .post("/v1/exports", body: Payload(
+                    projectTitle: project.title,
+                    fileCount: export.fileCount
+                ))
+            try? generationRepository.insert(
+                response.job.model(projectID: project.id)
+            )
+        } catch {
+            insertLocalJob(project: project)
+        }
+    }
+
+    private func insertLocalJob(project: Project) {
         let job = GenerationJob(
             projectID: project.id,
             projectTitle: project.title,
@@ -351,6 +383,5 @@ final class ExportsViewModel {
             detail: "Documents + JSON + kit"
         )
         try? generationRepository.insert(job)
-        latestExport = export
     }
 }

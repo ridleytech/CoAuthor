@@ -133,4 +133,72 @@ enum BackendDTO {
             )
         }
     }
+
+    // MARK: GET /v1/voices
+
+    struct Voice: Decodable {
+        var name: String
+        var origin: String
+        var kind: String
+        var roleTag: String
+        var descriptor: String?
+        var summary: String
+        var tags: [String]
+        var sampleSeconds: Int
+        var isFavorite: Bool?
+        var designPrompt: String?
+        var savedVoiceID: String?
+
+        func model() -> CoAuthor.Voice {
+            CoAuthor.Voice(
+                name: name,
+                origin: origin,
+                kind: kind,
+                roleTag: roleTag,
+                descriptor: descriptor ?? "",
+                summary: summary,
+                tags: tags,
+                sampleSeconds: sampleSeconds,
+                isFavorite: isFavorite ?? false,
+                designPrompt: designPrompt ?? "",
+                savedVoiceID: savedVoiceID ?? ""
+            )
+        }
+    }
+
+    // MARK: POST /v1/exports
+
+    struct ExportResponse: Decodable {
+        var status: String
+        var job: Job
+    }
+
+    // MARK: POST /v1/auth/signin|signup
+
+    /// Development auth — the backend returns a dev token and the
+    /// submitted profile; a real identity provider is not wired.
+    struct AuthSession: Decodable {
+        var token: String?
+        var profile: Profile?
+        var development: Bool?
+        var error: String?
+
+        struct Profile: Decodable {
+            var name: String
+            var email: String
+        }
+    }
+
+    // MARK: POST /v1/projects/{id}/documents/{kind}:generate
+
+    struct DocumentResponse: Decodable {
+        var status: String
+        var document: Document?
+
+        struct Document: Decodable {
+            var kind: String
+            var title: String
+            var body: String
+        }
+    }
 }

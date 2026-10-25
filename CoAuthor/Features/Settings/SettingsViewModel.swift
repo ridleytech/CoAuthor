@@ -241,16 +241,27 @@ final class DeleteAccountViewModel {
 }
 
 /// Backs the create-account screen — field validation matching the
-/// Auth — validation reference. No account is created; backend is M12.
+/// Auth — validation reference. In backend mode, submit posts to
+/// POST /v1/auth/signup (development auth — see backend README).
 @Observable
 @MainActor
 final class CreateAccountViewModel {
+    private let backendClient: any BackendClient
+
     var name = ""
     var email = ""
     var password = ""
     var showPassword = false
     var acceptedTerms = false
     var attemptedSubmit = false
+    /// Set when a backend signup succeeds — the caller can show a
+    /// real confirmation instead of the placeholder.
+    private(set) var sessionToken: String?
+    var serverError: String?
+
+    init(backendClient: any BackendClient = URLSessionBackendClient()) {
+        self.backendClient = backendClient
+    }
 
     var nameError: String? {
         guard attemptedSubmit else { return nil }
@@ -285,12 +296,39 @@ final class CreateAccountViewModel {
         return acceptedTerms ? nil : "Accept the terms to create an account."
     }
 
-    /// Returns true when the form validates — the caller routes to
-    /// the M12 backend placeholder either way.
+    /// Validates the form, then — in backend mode — posts the
+    /// signup. Returns true on success so the caller can route
+    /// onward; on a backend error `serverError` is set and the
+    /// caller falls back to the placeholder flow.
     @discardableResult
-    func submit() -> Bool {
+    func submit() async -> Bool {
         attemptedSubmit = true
-        return nameError == nil && emailError == nil
+        guard nameError == nil && emailError == nil
             && passwordError == nil && termsError == nil
+        else { return false }
+
+        guard BackendConfiguration.shared.useBackend else { return true }
+        struct Payload: Encodable {
+            let name: String
+            let email: String
+            let password: String
+        }
+        do {
+            let session: BackendDTO.AuthSession = try await backendClient
+                .post("/v1/auth/signup", body: Payload(
+                    name: name, email: email, password: password
+                ))
+            guard let token = session.token else {
+                serverError = session.error?
+                    .replacingOccurrences(of: "_", with: " ")
+                    .capitalized ?? "Signup failed."
+                return false
+            }
+            sessionToken = token
+            return true
+        } catch {
+            serverError = "Couldn't reach the server — try again."
+            return false
+        }
     }
 }

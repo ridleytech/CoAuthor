@@ -6,6 +6,10 @@ import Foundation
 /// failures fall back to mock data at the call site.
 protocol BackendClient {
     func get<Response: Decodable>(_ path: String) async throws -> Response
+    func post<Response: Decodable>(
+        _ path: String,
+        body: some Encodable
+    ) async throws -> Response
 }
 
 struct URLSessionBackendClient: BackendClient {
@@ -24,6 +28,23 @@ struct URLSessionBackendClient: BackendClient {
     func get<Response: Decodable>(_ path: String) async throws -> Response {
         let url = baseURL.appendingPathComponent(path)
         let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode)
+        else {
+            throw URLError(.badServerResponse)
+        }
+        return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+    func post<Response: Decodable>(
+        _ path: String,
+        body: some Encodable
+    ) async throws -> Response {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode)
         else {
