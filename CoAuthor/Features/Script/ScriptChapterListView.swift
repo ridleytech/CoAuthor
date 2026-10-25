@@ -52,7 +52,9 @@ struct ScriptChapterListView: View {
             ProjectSectionTabs(
                 projectID: project.id,
                 active: .story,
-                storyDestination: .outline(projectID: project.id)
+                storyDestination: .outline(projectID: project.id),
+                audioDestination: project.narratorConfirmed
+                    ? .narrationStudio(projectID: project.id) : nil
             )
             if viewModel.chapters.isEmpty {
                 ContentUnavailableView(

@@ -21,6 +21,16 @@ final class ScriptChapter {
     var audioSeconds: Int
     /// Last playback position in seconds.
     var audioPosition: Int
+    /// Generation/job state: "none", "queued", "generating",
+    /// "failed", "canceled", or "ready" (audio exists).
+    var audioState: String = "none"
+    /// Human review state for generated audio: "—", "Suggested",
+    /// or "Approved".
+    var reviewState: String = "—"
+    /// Checked in the narration studio for the next generation batch.
+    var isSelectedForGeneration: Bool = false
+    /// Which audio take the current file is ("Audio take 1").
+    var audioTake: Int = 1
 
     init(
         id: UUID = UUID(),
@@ -32,7 +42,11 @@ final class ScriptChapter {
         revision: Int = 1,
         audioRevision: Int? = nil,
         audioSeconds: Int = 0,
-        audioPosition: Int = 0
+        audioPosition: Int = 0,
+        audioState: String = "none",
+        reviewState: String = "—",
+        isSelectedForGeneration: Bool = false,
+        audioTake: Int = 1
     ) {
         self.id = id
         self.projectID = projectID
@@ -44,6 +58,10 @@ final class ScriptChapter {
         self.audioRevision = audioRevision
         self.audioSeconds = audioSeconds
         self.audioPosition = audioPosition
+        self.audioState = audioState
+        self.reviewState = reviewState
+        self.isSelectedForGeneration = isSelectedForGeneration
+        self.audioTake = audioTake
     }
 
     var wordCount: Int {

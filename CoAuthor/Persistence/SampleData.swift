@@ -270,8 +270,42 @@ enum SampleData {
             "Sunday Collections", "The Second Set of Books",
             "What the River Keeps", "A Balance Owed",
         ]
+        // Per-chapter states matching the Narration studio reference:
+        // ready-outdated / ready-suggested / ready-approved / selected /
+        // queued / generating / failed / canceled / selected / none.
+        struct Spec {
+            let audioRevision: Int?
+            let audioSeconds: Int
+            let audioPosition: Int
+            let state: String
+            let review: String
+            let selected: Bool
+        }
+        let specs = [
+            Spec(audioRevision: 3, audioSeconds: 342, audioPosition: 84,
+                 state: "ready", review: "—", selected: false),
+            Spec(audioRevision: 4, audioSeconds: 366, audioPosition: 84,
+                 state: "ready", review: "Suggested", selected: false),
+            Spec(audioRevision: 4, audioSeconds: 360, audioPosition: 0,
+                 state: "ready", review: "Approved", selected: false),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "none", review: "—", selected: true),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "queued", review: "—", selected: false),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "generating", review: "—", selected: false),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "failed", review: "—", selected: false),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "canceled", review: "—", selected: false),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "none", review: "—", selected: true),
+            Spec(audioRevision: nil, audioSeconds: 0, audioPosition: 0,
+                 state: "none", review: "—", selected: false),
+        ]
         return titles.enumerated().map { pair in
             let index = pair.offset
+            let spec = specs[index]
             return ScriptChapter(
                 projectID: projectID,
                 number: index + 1,
@@ -283,11 +317,79 @@ enum SampleData {
                         title: pair.element, number: index + 1
                     ),
                 revision: 4,
-                audioRevision: index == 0 ? 3 : (index < 3 ? 4 : nil),
-                audioSeconds: index == 0 ? 342 : (index < 3 ? 300 : 0),
-                audioPosition: index == 0 ? 84 : 0
+                audioRevision: spec.audioRevision,
+                audioSeconds: spec.audioSeconds,
+                audioPosition: spec.audioPosition,
+                audioState: spec.state,
+                reviewState: spec.review,
+                isSelectedForGeneration: spec.selected
             )
         }
+    }
+
+    /// Generation activity matching the Generation-activity reference —
+    /// narration jobs in several states plus other task kinds/projects.
+    /// `basementDeskID`/`envelopeID` link jobs to their script chapters.
+    static func makeGenerationJobs(
+        basementDeskID: UUID? = nil,
+        envelopeID: UUID? = nil
+    ) -> [GenerationJob] {
+        let widowID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        let lightkeeperID = UUID(uuidString: "B2222222-2222-2222-2222-222222222222")!
+        let now = Date()
+        let cal = Calendar.current
+        func at(_ hour: Int, _ minute: Int, dayOffset: Int = 0) -> Date {
+            let day = cal.date(byAdding: .day, value: dayOffset, to: now)!
+            return cal.date(
+                bySettingHour: hour, minute: minute, second: 0, of: day
+            ) ?? now
+        }
+        return [
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Chapter narration", subject: "The Work",
+                provider: "ElevenLabs", status: "generating",
+                startedAt: at(9, 30), detail: "Estimate unavailable"
+            ),
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Chapter narration", subject: "Sunday Collections",
+                provider: "ElevenLabs", status: "queued",
+                startedAt: at(9, 30), detail: "Estimate unavailable"
+            ),
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Chapter narration", subject: "The Basement Desk",
+                provider: "ElevenLabs", status: "ready",
+                startedAt: at(9, 24), detail: "6:06 audio",
+                chapterID: basementDeskID
+            ),
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Sound audition", subject: "Basement hum",
+                provider: "ElevenLabs", status: "failed",
+                startedAt: at(9, 22), detail: "No result returned"
+            ),
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Full script", subject: "revision 4",
+                provider: "OpenAI", status: "ready",
+                startedAt: at(9, 12), detail: "Usage pending"
+            ),
+            GenerationJob(
+                projectID: lightkeeperID, projectTitle: "The Last Lightkeeper",
+                kind: "Thumbnail alternatives", subject: "",
+                provider: "OpenAI", status: "canceled",
+                startedAt: at(4, 15, dayOffset: -1), detail: "No result selected"
+            ),
+            GenerationJob(
+                projectID: widowID, projectTitle: "The Numbers Widow",
+                kind: "Chapter narration", subject: "The Envelope",
+                provider: "ElevenLabs", status: "outdated",
+                startedAt: at(15, 40, dayOffset: -1), detail: "Script r3",
+                chapterID: envelopeID
+            ),
+        ]
     }
 
     /// Saved voices matching the Saved Voices design reference —
@@ -414,8 +516,13 @@ enum SampleData {
         context.insert(outline)
         for chapter in chapters { context.insert(chapter) }
         for character in characters { context.insert(character) }
-        for chapter in makeScriptChapters() { context.insert(chapter) }
+        let scriptChapters = makeScriptChapters()
+        for chapter in scriptChapters { context.insert(chapter) }
         for voice in makeVoices() { context.insert(voice) }
         for assignment in makeCastAssignments() { context.insert(assignment) }
+        for job in makeGenerationJobs(
+            basementDeskID: scriptChapters.count > 1 ? scriptChapters[1].id : nil,
+            envelopeID: scriptChapters.first?.id
+        ) { context.insert(job) }
     }
 }

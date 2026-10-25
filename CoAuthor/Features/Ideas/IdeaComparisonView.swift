@@ -53,7 +53,9 @@ struct IdeaComparisonView: View {
                 active: .story,
                 storyDestination: project.hasOutline
                     ? .outline(projectID: project.id)
-                    : .ideaGeneration(projectID: project.id)
+                    : .ideaGeneration(projectID: project.id),
+                audioDestination: project.narratorConfirmed
+                    ? .narrationStudio(projectID: project.id) : nil
             )
 
             ScrollView {

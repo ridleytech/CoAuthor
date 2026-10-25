@@ -41,6 +41,12 @@ extension Color {
     static let caBadgeWarmLight = Color(red: 0.969, green: 0.961, blue: 0.941)
     /// Neutral badge fill — "Draft".
     static let caBadgeNeutral = Color(red: 0.937, green: 0.937, blue: 0.941)
+    /// Pale green badge fill — "Ready" / "Approved" (sampled).
+    static let caBadgeReady = Color(red: 0.91, green: 0.953, blue: 0.918)
+    /// Pale red badge fill — "Failed" (sampled).
+    static let caBadgeFailed = Color(red: 0.984, green: 0.918, blue: 0.918)
+    /// Pale blue badge fill — "Generating" (sampled).
+    static let caBadgeInfo = Color(red: 0.918, green: 0.937, blue: 0.984)
     /// Status-bar style pill behind "Saved".
     static let caPill = Color(red: 0.949, green: 0.949, blue: 0.957)
     /// Fallback for missing cover art.

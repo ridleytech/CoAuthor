@@ -66,7 +66,9 @@ struct VoiceCreationView: View {
                 projectID: project.id,
                 active: .audio,
                 storyDestination: project.hasOutline
-                    ? .outline(projectID: project.id) : nil
+                    ? .outline(projectID: project.id) : nil,
+                audioDestination: project.narratorConfirmed
+                    ? .narrationStudio(projectID: project.id) : nil
             )
         }
         if viewModel.finished {

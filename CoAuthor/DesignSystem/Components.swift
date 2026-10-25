@@ -47,12 +47,21 @@ enum StatusBadgeKind {
     case warmLight
     /// Gray badge, e.g. "Draft".
     case neutral
+    /// Pale green badge, e.g. "Ready"/"Approved".
+    case ready
+    /// Pale red badge, e.g. "Failed".
+    case failed
+    /// Pale blue badge, e.g. "Generating".
+    case info
 
     var fill: Color {
         switch self {
         case .warm: .caBadgeWarm
         case .warmLight: .caBadgeWarmLight
         case .neutral: .caBadgeNeutral
+        case .ready: .caBadgeReady
+        case .failed: .caBadgeFailed
+        case .info: .caBadgeInfo
         }
     }
 }

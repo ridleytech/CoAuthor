@@ -52,7 +52,9 @@ struct OutlineView: View {
             ProjectSectionTabs(
                 projectID: project.id,
                 active: .story,
-                storyDestination: .outline(projectID: project.id)
+                storyDestination: .outline(projectID: project.id),
+                audioDestination: project.narratorConfirmed
+                    ? .narrationStudio(projectID: project.id) : nil
             )
 
             ScrollView {

@@ -25,6 +25,9 @@ struct ProjectSectionTabs: View {
     /// Where the Story tab leads — ideas during setup, the outline
     /// once one exists.
     var storyDestination: AppRoute? = nil
+    /// Where the Audio tab leads — casting until a narrator is
+    /// confirmed, the narration studio after.
+    var audioDestination: AppRoute? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +56,7 @@ struct ProjectSectionTabs: View {
         switch section {
         case .overview: .projectDetail(projectID)
         case .story: storyDestination ?? .ideaGeneration(projectID: projectID)
-        case .audio: .voiceCasting(projectID: projectID)
+        case .audio: audioDestination ?? .voiceCasting(projectID: projectID)
         case .publish: .placeholder(title: "Publishing kit", milestone: "M10")
         }
     }

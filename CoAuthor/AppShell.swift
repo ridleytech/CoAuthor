@@ -25,7 +25,11 @@ struct RootView: View {
                             .toolbar(.hidden, for: .navigationBar)
                     }
                 case .activity:
-                    tabStack(for: .activity, title: "Activity", milestone: "M8")
+                    NavigationStack(path: coordinator.path(for: .activity)) {
+                        GenerationActivityView()
+                            .navigationDestination(for: AppRoute.self, destination: destination)
+                            .toolbar(.hidden, for: .navigationBar)
+                    }
                 case .settings:
                     tabStack(for: .settings, title: "Settings", milestone: "M11")
                 }
@@ -96,8 +100,12 @@ struct RootView: View {
             CastingView(projectID: projectID)
         case .voiceCreation(let projectID):
             VoiceCreationView(projectID: projectID)
-        case .narration:
-            DevelopmentPlaceholderView(title: "Narration studio", milestone: "M8")
+        case .narrationStudio(let projectID):
+            NarrationView(projectID: projectID)
+        case .audioReview(let chapterID):
+            AudioReviewView(chapterID: chapterID)
+        case .narration(let projectID):
+            NarrationView(projectID: projectID)
         case .reviewItem:
             DevelopmentPlaceholderView(title: "Review item", milestone: "M8/M9")
         case .reviewQueue:

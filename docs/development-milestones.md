@@ -571,12 +571,80 @@ run (deferred at user's request — code-only pass).
 
 ## M8 — Narration
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: chapter selection, generation confirmation, job states,
-  audio review.
-- Design: `Narration studio`, `Audio review & generation confirmation`,
-  `Generation activity`, `Other/Generation/*`.
+### Scope implemented
+
+- `ScriptChapter` extended with `audioState` (none/queued/generating/
+  failed/canceled/ready), `reviewState` (—/Suggested/Approved),
+  `isSelectedForGeneration`, `audioTake` — all additive with defaults.
+- `GenerationJob` model + `GenerationRepository` for the Activity feed.
+- New `StatusBadgeKind` fills: ready (green), failed (red), info
+  (blue) — sampled approximations.
+- Narration studio (`Narration studio` reference): Audio tab,
+  "Chapter recordings" + generated-count subtitle, narrator-confirmed
+  card (script revision, selection summary "☑ A + B", estimated batch
+  duration, "Change narrator / selection" → casting), ten chapter
+  cards with checkboxes, per-state status + review badges ("Outdated",
+  "● Ready", "✓ Approved", "Suggested", "Queued", "↻ Generating",
+  "Failed", "Canceled", "· Not generated"), and per-state actions
+  (Listen / Review, Select chapter, Cancel job, Retry — all real
+  state changes persisted via the repository). Player strip + "Generate
+  selected chapters" → audio review.
+- Audio review (`Audio review & generation confirmation`): "Listen &
+  review", Generation/Review status badges, player card (play/pause,
+  narrator · ElevenLabs · 1×, scrub hint, progress bar, timestamps,
+  Regenerate → M12 / Download → M10), source-passage card (first
+  paragraph excerpt, "Add performance correction" → M12), "Confirm
+  generation" card (Paid badge, batch summary, estimated duration,
+  confirm → queues the selected batch), mini audio strip, "Approve
+  audio" CTA → persists `reviewState = Approved`.
+- Generation activity (`Generation activity` reference) — now the
+  Activity tab root: project/task/status filter menus (functional),
+  job cards with status badges and per-state actions (Cancel → real
+  state change; Open result → audio review via linked chapter;
+  Retry → requeue; View details / Review source → script reader),
+  "Refresh activity" CTA.
+- Audio tab destination is now narrator-aware (`audioDestination`):
+  casting until `narratorConfirmed`, the studio after — updated at
+  all 11 `ProjectSectionTabs` call sites. The dashboard's "Continue
+  narration" and overview "Review chapter audio" CTAs now reach the
+  studio via `.narration(projectID:)` (fixed a latent route/destination
+  mismatch).
+
+### Design interpretations recorded
+
+- Generation/queue/cancel/retry are local state changes — no paid
+  provider calls; the paid-generation confirmation flow is the
+  review screen's card, and real jobs are M12 backend work.
+- The player is cosmetic (play/pause + static progress); no audio
+  file exists.
+- "Generate selected chapters" routes to the review screen whose
+  confirm card covers the whole batch — matching how the references
+  couple review + confirmation.
+- Activity filters work on the seeded job set; provider sync is M12.
+
+### Files
+
+- Added: `Models/GenerationJob.swift`,
+  `Persistence/GenerationRepository.swift`,
+  `Features/Narration/NarrationViewModel.swift` (studio + review VMs),
+  `NarrationView.swift`, `AudioReviewView.swift`,
+  `GenerationActivityView.swift`
+- Changed: `Models/ScriptChapter.swift` (+4 audio-state fields),
+  `SchemaV1.swift` (+`GenerationJob`), `Persistence/SampleData.swift`
+  (per-chapter states matching the studio reference + 7 seeded jobs
+  linked to chapters), `DesignSystem/Components.swift`/`Theme.swift`
+  (ready/failed/info badges), `Navigation/AppCoordinator.swift`
+  (`.narrationStudio`, `.audioReview`), `AppShell.swift` (Activity root,
+  `.narration` → studio), `ProjectSectionTabs.swift`
+  (`audioDestination`), all project screens (audio destination),
+  `ProjectOverviewView.swift` (CTA → studio)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M9 — Sound cues
 
