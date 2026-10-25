@@ -66,8 +66,10 @@ struct RootView: View {
             ProjectOverviewView(projectID: id)
         case .newProject:
             NewProjectView()
-        case .ideaGeneration:
-            DevelopmentPlaceholderView(title: "Generated ideas", milestone: "M3")
+        case .ideaGeneration(let projectID):
+            IdeasView(projectID: projectID)
+        case .ideaComparison(let projectID):
+            IdeaComparisonView(projectID: projectID)
         case .narration:
             DevelopmentPlaceholderView(title: "Narration studio", milestone: "M8")
         case .reviewItem:

@@ -46,6 +46,8 @@ final class Project {
     var narratorConfirmed: Bool = false
     var cuesApproved: Int = 0
     var cuesTotal: Int = 0
+    /// The idea the user chose as the story direction.
+    var selectedIdeaID: UUID?
     /// Asset-catalog name for the featured cover image, if any.
     var coverImageName: String?
     var createdAt: Date
@@ -72,6 +74,7 @@ final class Project {
         narratorConfirmed: Bool = false,
         cuesApproved: Int = 0,
         cuesTotal: Int = 0,
+        selectedIdeaID: UUID? = nil,
         coverImageName: String? = nil,
         createdAt: Date = Date(),
         lastEditedAt: Date = Date()
@@ -96,6 +99,7 @@ final class Project {
         self.narratorConfirmed = narratorConfirmed
         self.cuesApproved = cuesApproved
         self.cuesTotal = cuesTotal
+        self.selectedIdeaID = selectedIdeaID
         self.coverImageName = coverImageName
         self.createdAt = createdAt
         self.lastEditedAt = lastEditedAt

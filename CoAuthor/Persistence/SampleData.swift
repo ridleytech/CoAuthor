@@ -36,6 +36,7 @@ enum SampleData {
                 narratorConfirmed: true,
                 cuesApproved: 8,
                 cuesTotal: 32,
+                selectedIdeaID: UUID(uuidString: "E5555555-5555-5555-5555-555555555551")!,
                 coverImageName: "DashboardHero",
                 createdAt: cal.date(byAdding: .day, value: -14, to: now)!,
                 lastEditedAt: cal.date(byAdding: .hour, value: -2, to: now)!
@@ -132,11 +133,66 @@ enum SampleData {
         ),
     ] }
 
+    /// Ideas for "The Numbers Widow" matching the Generated-ideas and
+    /// comparison design references.
+    static func makeIdeas() -> [Idea] {
+        let projectID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        return [
+            Idea(
+                id: UUID(uuidString: "E5555555-5555-5555-5555-555555555551")!,
+                projectID: projectID,
+                title: "The Numbers Widow",
+                tagline: "intimate financial mystery",
+                pitch: "Her husband's murder exposes missing money in his numbers operation.",
+                expandedPitch: "Evelyn Price, a bookkeeper and mother of two, follows "
+                    + "missing money after her husband's murder. His debt threatens "
+                    + "her children. Her eye for numbers becomes her only protection.",
+                protagonist: "Evelyn Price · a precise, underestimated bookkeeper and mother of two.",
+                stakes: "A debt threatens her children before she can discover who is collecting it.",
+                angle: "Financial clues become the language of grief, trust and survival.",
+                isSelected: true,
+                isSaved: true,
+                sortOrder: 0
+            ),
+            Idea(
+                id: UUID(uuidString: "E5555555-5555-5555-5555-555555555552")!,
+                projectID: projectID,
+                title: "The Sunday Collector",
+                tagline: "neighborhood moral mystery",
+                pitch: "A missing collection book ties a respectable charity to an illegal lottery.",
+                expandedPitch: "Ruth Bell, a church treasurer, discovers a missing "
+                    + "collection book. Exposing the truth could save her neighbors—or "
+                    + "destroy the charity that holds them together.",
+                protagonist: "Ruth Bell · a church treasurer who knows every household on her route.",
+                stakes: "To protect her neighborhood, Ruth must expose the person who once protected her.",
+                angle: "One Sunday's collection route reveals a city's hidden moral economy.",
+                isSelected: true,
+                isSaved: true,
+                sortOrder: 1
+            ),
+            Idea(
+                id: UUID(uuidString: "E5555555-5555-5555-5555-555555555553")!,
+                projectID: projectID,
+                title: "A House on Dexter",
+                tagline: "contained domestic mystery",
+                pitch: "An old tenant returns for a ledger hidden inside a wall.",
+                expandedPitch: "An old tenant returns for a ledger hidden inside a wall.",
+                protagonist: "Gloria Watts · a seamstress preparing to sell her family home.",
+                stakes: "The sale could free her family—or deliver their last refuge to the wrong hands.",
+                angle: "A contained, domestic mystery unfolding across a single winter weekend.",
+                isSelected: false,
+                isSaved: false,
+                sortOrder: 2
+            ),
+        ]
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
     static func insertSamples(into context: ModelContext) {
         for project in makeProjects() { context.insert(project) }
         for item in makeReviewItems() { context.insert(item) }
+        for idea in makeIdeas() { context.insert(idea) }
     }
 }

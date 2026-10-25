@@ -221,11 +221,62 @@ run (deferred at user's request — code-only pass).
 
 ## M3 — Ideas
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: idea generator UI, deterministic mock generation, results
-  list, idea detail, selection, persistence.
-- Design: `Full Content/Generated ideas`, `Idea comparison & story setup`.
+### Scope implemented
+
+- `Idea` model (pitch, expanded pitch, protagonist/stakes/angle,
+  `isSelected`, `isSaved`, per-project `projectID`) added to
+  `CoAuthorSchemaV1`.
+- `IdeasRepository` protocol + SwiftData implementation;
+  `saveChanges()` added to `DashboardRepository`.
+- `MockIdeaGenerator` — deterministic local generation (no AI): the
+  Nth generation for a project always returns the same idea.
+- Generated-ideas screen per `Full Content/Generated ideas`: project
+  header + Story tab strip, idea cards (Selected/New badges,
+  protagonist/stakes/angle lines, Save/Refine/View-idea actions),
+  "Keep exploring" card with working "Generate more ideas", and a
+  "Compare selected ideas" CTA enabled when anything is selected.
+- First open auto-generates three ideas for a project that has none
+  (e.g., a project just created in M2).
+- Comparison screen per `Full Content/Idea comparison & story setup`:
+  stacked comparison cards with ink-bordered chosen card, "Select this
+  idea" (persists `project.selectedIdeaID`), story-configuration
+  summary, progress card, "Next: review your outline" card, and a
+  "Select and generate outline" CTA that commits the choice and routes
+  to the M4 outline placeholder.
+- Shared `ProjectSectionTabs` (Overview/Story/Audio/Publish) extracted
+  from the overview; Story routes to the ideas screen. `InfoPill`
+  shared across screens.
+
+### Design interpretations recorded
+
+- No dedicated idea-detail design exists — "View idea →" routes to the
+  comparison screen (the fullest idea rendering supplied).
+- The ideas list "Selected" badge toggles membership in the compare
+  set; the comparison screen's "Select this idea" picks the story
+  direction (`selectedIdeaID`).
+- "Refine" is an AI-driven action — routes to a labeled M12 backend
+  placeholder rather than pretending to work.
+- Comparison subtitle uses the actual selected count ("Compare N
+  ideas"); the design's fixed "two" is a sample value.
+
+### Files added/changed
+
+- Added: `Models/Idea.swift`, `Persistence/IdeasRepository.swift`
+  (repository + `MockIdeaGenerator`), `Features/Ideas/IdeasViewModel.swift`,
+  `Features/Ideas/IdeasView.swift`, `Features/Ideas/IdeaComparisonView.swift`,
+  `Features/Projects/ProjectSectionTabs.swift`
+- Changed: `Models/Project.swift` (`selectedIdeaID`), `SchemaV1.swift`
+  (+`Idea`), `Persistence/SampleData.swift` (design-matching ideas),
+  `Persistence/DashboardRepository.swift` (`saveChanges`),
+  `Navigation/AppCoordinator.swift` (`.ideaComparison`), `AppShell.swift`
+  (real destinations), `ProjectOverviewView.swift` (shared tab strip)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M4 — Outline
 

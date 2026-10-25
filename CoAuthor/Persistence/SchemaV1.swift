@@ -7,7 +7,7 @@ enum CoAuthorSchemaV1: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [Project.self, ReviewItem.self]
+        [Project.self, ReviewItem.self, Idea.self]
     }
 }
 

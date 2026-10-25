@@ -10,15 +10,6 @@ struct ProjectOverviewView: View {
     let projectID: UUID
     @State private var viewModel: ProjectOverviewViewModel?
 
-    /// Sections of the project workspace; only Overview exists this
-    /// milestone — the rest route to labeled placeholders.
-    private let tabs: [(title: String, placeholder: (String, String)?)] = [
-        ("Overview", nil),
-        ("Story", ("Script", "M5")),
-        ("Audio", ("Audio review", "M8")),
-        ("Publish", ("Publishing kit", "M10")),
-    ]
-
     var body: some View {
         VStack(spacing: 0) {
             BackTopBar(title: viewModel?.project?.title ?? "Project") {
@@ -56,7 +47,7 @@ struct ProjectOverviewView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: ProjectOverviewViewModel) -> some View {
         VStack(spacing: 0) {
-            tabStrip
+            ProjectSectionTabs(projectID: project.id, active: .overview)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
@@ -79,44 +70,6 @@ struct ProjectOverviewView: View {
         }
     }
 
-    // MARK: Tab strip
-
-    private var tabStrip: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 24) {
-                ForEach(Array(tabs.enumerated()), id: \.offset) { pair in
-                    let tab = pair.element
-                    if let placeholder = tab.placeholder {
-                        Button {
-                            coordinator.push(.placeholder(title: placeholder.0, milestone: placeholder.1))
-                        } label: {
-                            tabItem(tab.title, active: false)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        tabItem(tab.title, active: true)
-                    }
-                }
-                Spacer()
-            }
-            .padding(.horizontal, Theme.Spacing.page)
-            .padding(.top, 8)
-            Divider().overlay(Color.caHairline)
-        }
-        .background(Color.caSurface)
-    }
-
-    private func tabItem(_ title: String, active: Bool) -> some View {
-        VStack(spacing: 6) {
-            Text(title)
-                .font(.subheadline.weight(active ? .semibold : .regular))
-                .foregroundStyle(active ? Color.caInk : Color.caSecondary)
-            Rectangle()
-                .fill(active ? Color.caInk : Color.clear)
-                .frame(height: 2)
-        }
-    }
-
     // MARK: Content
 
     private func titleBlock(_ project: Project, _ viewModel: ProjectOverviewViewModel) -> some View {
@@ -128,26 +81,16 @@ struct ProjectOverviewView: View {
                 .foregroundStyle(Color.caSecondary)
             HStack(spacing: 8) {
                 if project.totalChapters > 0 {
-                    overviewPill("\(project.narratedChapters) of \(project.totalChapters) narrated")
+                    InfoPill("\(project.narratedChapters) of \(project.totalChapters) narrated")
                 }
                 if project.cuesTotal > 0 {
-                    overviewPill("\(project.cuesApproved) of \(project.cuesTotal) cues")
+                    InfoPill("\(project.cuesApproved) of \(project.cuesTotal) cues")
                 }
             }
             .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
-    }
-
-    private func overviewPill(_ text: String) -> some View {
-        Text(text)
-            .font(.caption.weight(.medium))
-            .foregroundStyle(Color.caSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.caPill)
-            .clipShape(Capsule())
     }
 
     private func storyCard(_ project: Project, _ viewModel: ProjectOverviewViewModel) -> some View {

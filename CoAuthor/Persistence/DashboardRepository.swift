@@ -13,6 +13,8 @@ protocol DashboardRepository {
     func fetchReviewItems() throws -> [ReviewItem]
     func insert(_ project: Project) throws
     func delete(_ project: Project) throws
+    /// Commits pending changes on the shared context.
+    func saveChanges() throws
     /// Writes development seed data once. A UserDefaults flag prevents
     /// reseeding after the user deletes records.
     func seedDevelopmentDataIfNeeded() throws
@@ -57,6 +59,10 @@ final class SwiftDataDashboardRepository: DashboardRepository {
 
     func delete(_ project: Project) throws {
         context.delete(project)
+        try context.save()
+    }
+
+    func saveChanges() throws {
         try context.save()
     }
 
