@@ -47,7 +47,13 @@ struct ProjectOverviewView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: ProjectOverviewViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(projectID: project.id, active: .overview)
+            ProjectSectionTabs(
+                projectID: project.id,
+                active: .overview,
+                storyDestination: project.hasOutline
+                    ? .outline(projectID: project.id)
+                    : .ideaGeneration(projectID: project.id)
+            )
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {

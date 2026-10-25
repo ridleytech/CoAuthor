@@ -32,6 +32,7 @@ enum SampleData {
                 narratorName: "Marlene",
                 scriptRevision: 4,
                 outlineApproved: true,
+                hasOutline: true,
                 scriptChapterCount: 10,
                 narratorConfirmed: true,
                 cuesApproved: 8,
@@ -187,6 +188,58 @@ enum SampleData {
         ]
     }
 
+    /// Outline content for "The Numbers Widow" matching the
+    /// Outline-workspace design reference (r2, approved).
+    static func makeOutline() -> (outline: Outline, chapters: [OutlineChapter], characters: [OutlineCharacter]) {
+        let projectID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        let outline = Outline(
+            projectID: projectID,
+            revision: 2,
+            approved: true,
+            sections: ["Overview", "Writing approach", "Settings",
+                       "Characters", "Chapters", "Private ending"],
+            writingApproach: "Close third person, past tense.",
+            privateEnding: "Evelyn uses a duplicate ledger to negotiate her "
+                + "family's release from the debt, refusing to continue the "
+                + "operation.",
+            centralQuestion: "Can she protect her children without inheriting "
+                + "Leon's compromises?"
+        )
+        let titles = [
+            "The Envelope", "The Basement Desk", "Odessa on Dexter",
+            "The House Key", "The Work", "A Name in the Ledger",
+            "Sunday Collections", "The Second Set of Books",
+            "What the River Keeps", "A Balance Owed",
+        ]
+        let chapters = titles.enumerated().map { pair in
+            OutlineChapter(
+                outlineID: outline.id,
+                number: pair.offset + 1,
+                title: pair.element,
+                summary: pair.offset == 0
+                    ? "Evelyn returns from the funeral to an unmarked envelope "
+                        + "beneath the sugar bowl. A collection total does not "
+                        + "match Leon's ledger. She hides it before her daughter sees."
+                    : "The investigation deepens as \(pair.element.lowercased()) forces "
+                        + "Evelyn to choose what she can afford to know.",
+                turn: pair.offset == 0
+                    ? "a handwriting habit suggests someone she knows sent the demand."
+                    : "the cost of silence rises.",
+                estimatedMinutes: 6
+            )
+        }
+        let characters = [
+            OutlineCharacter(
+                outlineID: outline.id,
+                name: "Evelyn Price",
+                role: "protagonist",
+                notes: "Bookkeeper, 34, mother of two. Controlled, observant and "
+                    + "quietly stubborn. Keep her active in the investigation."
+            )
+        ]
+        return (outline, chapters, characters)
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
@@ -194,5 +247,9 @@ enum SampleData {
         for project in makeProjects() { context.insert(project) }
         for item in makeReviewItems() { context.insert(item) }
         for idea in makeIdeas() { context.insert(idea) }
+        let (outline, chapters, characters) = makeOutline()
+        context.insert(outline)
+        for chapter in chapters { context.insert(chapter) }
+        for character in characters { context.insert(character) }
     }
 }

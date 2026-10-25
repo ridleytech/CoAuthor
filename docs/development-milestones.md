@@ -280,10 +280,63 @@ run (deferred at user's request — code-only pass).
 
 ## M4 — Outline
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: outline sections, chapter summaries, editing, approval.
-- Design: `Full Content/Outline workspace`.
+### Scope implemented
+
+- `Outline`, `OutlineChapter`, `OutlineCharacter` models added to
+  `CoAuthorSchemaV1` (UUID-keyed by `projectID`/`outlineID`, no
+  bidirectional relationships — consistent with `Idea`).
+- `OutlineRepository` protocol + SwiftData implementation;
+  `MockOutlineGenerator` produces a deterministic 10-chapter draft for
+  projects that reach the workspace without an outline (no AI calls);
+  `project.hasOutline` marks outline existence.
+- Outline workspace per `Full Content/Outline workspace`: back header,
+  Story tab strip, "Review your outline." title + revision/workflow
+  subtitle, horizontal sections picker (focused section in ink),
+  featured chapter card (number · est. minutes, serif title, summary,
+  turn, "Edit chapter"), N-chapter arc list with tap-to-feature and a
+  "View all" chapter list, character card, private-ending card, and a
+  sticky "Approve outline and generate script" CTA.
+- Approval is real (`outline.approved`, `project.outlineApproved`,
+  `stageLabel` update, persists); script generation routes to a labeled
+  M5 placeholder.
+- Chapter editing screen (`ChapterEditView`): title/summary/turn/
+  estimated-minutes form bound to the model, saved via context on exit.
+- Story tab across overview/ideas/comparison now routes to the outline
+  once `hasOutline` is set; ideas comparison CTA routes here.
+
+### Design interpretations recorded
+
+- The sections picker focuses a section (ink pill); it does not filter
+  the page — the workspace shows all cards regardless, matching the
+  reference's single scrolling page.
+- "Featured chapter" card = the chapter tapped in the arc list
+  (defaults to Chapter 1); the design doesn't specify the mechanic.
+- Character card renders the first character; multiple-character UI
+  isn't specified by the reference.
+- "Regenerate" / character edit route to labeled placeholders —
+  backend-driven in M12.
+
+### Files
+
+- Added: `Models/Outline.swift`, `Persistence/OutlineRepository.swift`
+  (repository + `MockOutlineGenerator`), `Features/Outline/
+OutlineViewModel.swift`, `OutlineView.swift`, `ChapterListView.swift`,
+  `ChapterEditView.swift`
+- Changed: `Models/Project.swift` (`hasOutline`), `SchemaV1.swift`
+  (+3 outline models), `Persistence/SampleData.swift`
+  (design-matching outline for The Numbers Widow),
+  `Navigation/AppCoordinator.swift` (`.outline`, `.chapterEdit`,
+  `.chapterList`), `AppShell.swift` (destinations),
+  `ProjectSectionTabs.swift` (`storyDestination`),
+  `ProjectOverviewView.swift`, `IdeasView.swift`,
+  `IdeaComparisonView.swift` (outline routing)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M5 — Script
 

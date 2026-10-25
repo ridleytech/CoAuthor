@@ -48,6 +48,8 @@ final class Project {
     var cuesTotal: Int = 0
     /// The idea the user chose as the story direction.
     var selectedIdeaID: UUID?
+    /// True once an outline exists — steers the Story tab route.
+    var hasOutline: Bool = false
     /// Asset-catalog name for the featured cover image, if any.
     var coverImageName: String?
     var createdAt: Date
@@ -75,6 +77,7 @@ final class Project {
         cuesApproved: Int = 0,
         cuesTotal: Int = 0,
         selectedIdeaID: UUID? = nil,
+        hasOutline: Bool = false,
         coverImageName: String? = nil,
         createdAt: Date = Date(),
         lastEditedAt: Date = Date()
@@ -100,6 +103,7 @@ final class Project {
         self.cuesApproved = cuesApproved
         self.cuesTotal = cuesTotal
         self.selectedIdeaID = selectedIdeaID
+        self.hasOutline = hasOutline
         self.coverImageName = coverImageName
         self.createdAt = createdAt
         self.lastEditedAt = lastEditedAt

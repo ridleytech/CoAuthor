@@ -48,7 +48,13 @@ struct IdeaComparisonView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: IdeasViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(projectID: project.id, active: .story)
+            ProjectSectionTabs(
+                projectID: project.id,
+                active: .story,
+                storyDestination: project.hasOutline
+                    ? .outline(projectID: project.id)
+                    : .ideaGeneration(projectID: project.id)
+            )
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
@@ -80,7 +86,7 @@ struct IdeaComparisonView: View {
                 }) ?? viewModel.selectedIdeas.first {
                     viewModel.choose(chosen)
                 }
-                coordinator.push(.placeholder(title: "Outline workspace", milestone: "M4"))
+                coordinator.push(.outline(projectID: project.id))
             }
         }
     }

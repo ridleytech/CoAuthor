@@ -22,6 +22,9 @@ struct ProjectSectionTabs: View {
     @Environment(AppCoordinator.self) private var coordinator
     let projectID: UUID
     let active: ProjectSection
+    /// Where the Story tab leads — ideas during setup, the outline
+    /// once one exists.
+    var storyDestination: AppRoute? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,7 +52,7 @@ struct ProjectSectionTabs: View {
     private func route(for section: ProjectSection) -> AppRoute {
         switch section {
         case .overview: .projectDetail(projectID)
-        case .story: .ideaGeneration(projectID: projectID)
+        case .story: storyDestination ?? .ideaGeneration(projectID: projectID)
         case .audio: .placeholder(title: "Audio review", milestone: "M8")
         case .publish: .placeholder(title: "Publishing kit", milestone: "M10")
         }

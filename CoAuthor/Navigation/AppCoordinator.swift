@@ -34,6 +34,9 @@ enum AppRoute: Hashable, Identifiable {
     case newProject
     case ideaGeneration(projectID: UUID)
     case ideaComparison(projectID: UUID)
+    case outline(projectID: UUID)
+    case chapterEdit(chapterID: UUID)
+    case chapterList(outlineID: UUID)
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue
