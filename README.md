@@ -23,6 +23,19 @@ built with SwiftUI and SwiftData.
 The app seeds sample projects on first launch and is fully usable
 offline — all generation flows run on deterministic local mocks.
 
+## Screenshots
+
+Design references the UI is built from (see
+`docs/development-milestones.md` for per-screen notes):
+
+| Projects                                              | Ideas                                          | Outline                                            |
+| ----------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| ![Projects dashboard](docs/screenshots/dashboard.png) | ![Generated ideas](docs/screenshots/ideas.png) | ![Outline workspace](docs/screenshots/outline.png) |
+
+| Script                                               | Narration                                           | Voices                                             |
+| ---------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| ![Script reader](docs/screenshots/script-reader.png) | ![Narration studio](docs/screenshots/narration.png) | ![Saved voices](docs/screenshots/saved-voices.png) |
+
 ## Architecture
 
 MVVM with a coordinator navigation pattern and protocol-based
