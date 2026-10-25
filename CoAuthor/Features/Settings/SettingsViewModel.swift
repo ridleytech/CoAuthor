@@ -161,12 +161,19 @@ final class NotificationSettingsViewModel {
 @MainActor
 final class CreditsUsageViewModel {
     private let generationRepository: any GenerationRepository
+    private let backendClient: any BackendClient
 
-    let credits = CreditsSnapshot()
+    /// Illustrative by default; live values when backend mode is on
+    /// and `GET /v1/credits` succeeds.
+    private(set) var credits = CreditsSnapshot()
     private(set) var rows: [JobCreditRow] = []
 
-    init(generationRepository: any GenerationRepository) {
+    init(
+        generationRepository: any GenerationRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
+    ) {
         self.generationRepository = generationRepository
+        self.backendClient = backendClient
     }
 
     /// Illustrative credit amounts by job kind.
@@ -189,6 +196,21 @@ final class CreditsUsageViewModel {
                 credits: job.status == "failed"
                     ? nil : credits(for: job.kind)
             )
+        }
+        if BackendConfiguration.shared.useBackend {
+            Task { await fetchLiveCredits() }
+        }
+    }
+
+    /// Backend data path — fetches the balance from the API; the
+    /// illustrative snapshot stays when the call fails.
+    private func fetchLiveCredits() async {
+        do {
+            let response: CreditsSnapshot.Response = try await backendClient
+                .get("/v1/credits")
+            credits = credits.applying(response)
+        } catch {
+            // Keep the illustrative snapshot — backend unreachable.
         }
     }
 

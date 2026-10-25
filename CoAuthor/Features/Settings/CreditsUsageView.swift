@@ -43,7 +43,7 @@ struct CreditsUsageView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
-                    titleBlock
+                    titleBlock(viewModel)
                     creditsCard(viewModel)
                     subscriptionCard
                     breakdownCard(viewModel)
@@ -58,7 +58,7 @@ struct CreditsUsageView: View {
         }
     }
 
-    private var titleBlock: some View {
+    private func titleBlock(_ viewModel: CreditsUsageViewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Credits & Usage")
                 .font(.title.weight(.bold))
@@ -66,7 +66,12 @@ struct CreditsUsageView: View {
             Text("ElevenLabs provider credits, not a CoAuthor balance.")
                 .font(.subheadline)
                 .foregroundStyle(Color.caSecondary)
-            StatusBadge("Illustrative data · not a live balance", kind: .neutral)
+            if viewModel.credits.isLive {
+                StatusBadge("Live data · backend", kind: .ready)
+            } else {
+                StatusBadge("Illustrative data · not a live balance",
+                            kind: .neutral)
+            }
         }
         .padding(.vertical, 4)
     }

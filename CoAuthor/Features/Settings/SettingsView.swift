@@ -65,6 +65,7 @@ struct SettingsView: View {
                 preferencesCard(profile)
                 servicesCard(profile)
                 supportCard(viewModel)
+                developerCard
                 dangerCard
             }
             .padding(.horizontal, Theme.Spacing.page)
@@ -302,6 +303,39 @@ struct SettingsView: View {
                         .foregroundStyle(Color.caInk)
                 }
                 .padding(.vertical, 10)
+            }
+            .padding(Theme.Spacing.card)
+        }
+    }
+
+    // MARK: Developer card
+
+    /// Global mock ↔ backend switch. Feature code reads
+    /// `BackendConfiguration.shared.useBackend` at mock seams.
+    private var developerCard: some View {
+        CardContainer {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Developer")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.caInk)
+                Toggle(
+                    "Use backend data",
+                    isOn: Binding(
+                        get: { BackendConfiguration.shared.useBackend },
+                        set: { BackendConfiguration.shared.useBackend = $0 }
+                    )
+                )
+                .font(.subheadline)
+                .tint(Color.caInk)
+                Text("Base URL: \(BackendConfiguration.shared.baseURL.absoluteString)")
+                    .font(.caption)
+                    .foregroundStyle(Color.caSecondary)
+                Text("When on, supported sections fetch from the "
+                     + "backend API and fall back to mock data on "
+                     + "failure. Backend: backend/ (gitignored Lambda "
+                     + "scaffold).")
+                    .font(.caption)
+                    .foregroundStyle(Color.caSecondary)
             }
             .padding(Theme.Spacing.card)
         }

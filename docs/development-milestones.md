@@ -920,6 +920,18 @@ per maintainer request)**
 **Status: Not started**
 
 - Scope: replace mocks with CoAuthor backend services incrementally.
+- Pre-work landed: `backend/` (gitignored local scaffold) is a
+  Node.js AWS Lambda handler with stub routes mirroring the app's
+  mock services (`/health`, `/v1/credits`, generation stubs) plus a
+  `localhost:3100` dev runner.
+- `BackendConfiguration.shared` is the global mock ↔ backend switch
+  (Settings → Developer → "Use backend data", persisted via
+  UserDefaults, `baseURL` configurable). `URLSessionBackendClient`
+  is the transport. `CreditsUsageViewModel` is the first wired
+  seam: it fetches `GET /v1/credits` when backend mode is on and
+  falls back to the illustrative snapshot on failure (the screen
+  badges "Live data · backend" when live figures land). Remaining
+  mocks adopt the same seam in M12.
 
 ## M13 — Final UI and accessibility review
 

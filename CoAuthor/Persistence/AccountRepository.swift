@@ -43,17 +43,38 @@ final class SwiftDataAccountRepository: AccountRepository {
     }
 }
 
-/// Illustrative provider-credit snapshot matching the Credits
-/// designs — explicitly not a live balance until M12.
+/// Provider-credit snapshot matching the Credits designs. Default
+/// values are illustrative; when backend mode is on, live fields are
+/// populated from `GET /v1/credits`.
 struct CreditsSnapshot {
-    let connected = true
-    let accountName = "Jordan's studio"
-    let planLabel = "Creator (illustrative)"
-    let remaining = 72_400
-    let limit = 100_000
-    let resetLabel = "Resets November 12"
-    let lastRefresh = "Today, 9:42 AM"
-    let apiKeyTail = "9b41"
+    var connected = true
+    var accountName = "Jordan's studio"
+    var planLabel = "Creator (illustrative)"
+    var remaining = 72_400
+    var limit = 100_000
+    var resetLabel = "Resets November 12"
+    var lastRefresh = "Today, 9:42 AM"
+    var apiKeyTail = "9b41"
+    /// True when the figures came from the backend rather than the
+    /// built-in illustrative values.
+    var isLive = false
+
+    /// Shape returned by `GET /v1/credits` on the backend scaffold.
+    struct Response: Decodable {
+        var provider: String?
+        var remaining: Int
+        var limit: Int
+        var illustrative: Bool?
+    }
+
+    /// Copy of this snapshot with live figures applied.
+    func applying(_ response: Response) -> CreditsSnapshot {
+        var copy = self
+        copy.remaining = response.remaining
+        copy.limit = response.limit
+        copy.isLive = true
+        return copy
+    }
 
     var used: Int { limit - remaining }
     var usedPercent: Double { Double(used) / Double(limit) }
