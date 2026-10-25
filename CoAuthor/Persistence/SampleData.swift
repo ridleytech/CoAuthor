@@ -574,6 +574,62 @@ enum SampleData {
         ]
     }
 
+    /// Publishing kit matching the Publishing-kit reference —
+    /// spoiler-free title, description, tags, thumbnail selection.
+    static func makePublishingKit() -> PublishingKit {
+        PublishingKit(
+            projectID: UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!,
+            youtubeTitle: "The Numbers Widow | A Detroit Crime Story — 1972",
+            descriptionText: "Detroit, November 1972. A bookkeeper. A "
+                + "mysterious envelope. A balance that will not settle. "
+                + "Follow Evelyn Price in this intimate historical crime "
+                + "story, told by a single narrator. Approximately one "
+                + "hour of atmospheric fiction.",
+            tagsText: "historical fiction, crime story, Detroit 1972, audiobook",
+            pinnedComment: "Which detail first caught your attention? "
+                + "Please keep comments spoiler-free.",
+            thumbnailTitle: "Detroit Stories · 1972",
+            thumbnailDetail: "Literary typography over a dark teal Detroit "
+                + "street and warm kitchen light.",
+            isSaved: true,
+            savedAt: .now
+        )
+    }
+
+    /// Sound assets matching the Asset-library reference — two Widow
+    /// ambiences plus one from another project.
+    static func makeSoundAssets() -> [SoundAsset] {
+        [
+            SoundAsset(
+                title: "Kitchen room tone", projectTitle: "The Numbers Widow",
+                cueCode: "SC-01", seconds: 30,
+                createdDate: Date(timeIntervalSince1970: 1_793_500_800)
+            ),
+            SoundAsset(
+                title: "Basement hum - alternate",
+                projectTitle: "The Numbers Widow",
+                cueCode: "SC-04", seconds: 30,
+                createdDate: Date(timeIntervalSince1970: 1_793_414_400)
+            ),
+            SoundAsset(
+                title: "Lakeshore wind",
+                projectTitle: "The Last Lightkeeper",
+                cueCode: "SC-07", seconds: 45,
+                createdDate: Date(timeIntervalSince1970: 1_793_328_000)
+            ),
+        ]
+    }
+
+    /// Latest completed export shown on the Exports screen.
+    static func makeExportRecord() -> ExportRecord {
+        ExportRecord(
+            projectID: UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!,
+            title: "Documents package",
+            fileCount: 6,
+            sizeLabel: "1.8 MB"
+        )
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
@@ -594,5 +650,8 @@ enum SampleData {
             envelopeID: scriptChapters.first?.id
         ) { context.insert(job) }
         for cue in makeSoundCues() { context.insert(cue) }
+        context.insert(makePublishingKit())
+        for asset in makeSoundAssets() { context.insert(asset) }
+        context.insert(makeExportRecord())
     }
 }

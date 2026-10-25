@@ -108,6 +108,16 @@ struct RootView: View {
             SoundCuesView(projectID: projectID)
         case .cueDetail(let cueID):
             CueDetailView(cueID: cueID)
+        case .documents(let projectID):
+            DocumentsView(projectID: projectID)
+        case .documentPreview(let projectID, let kind):
+            DocumentPreviewView(projectID: projectID, kind: kind)
+        case .publishingKit(let projectID):
+            PublishingKitView(projectID: projectID)
+        case .exports(let projectID):
+            ExportsView(projectID: projectID)
+        case .assetLibrary:
+            AssetLibraryView()
         case .narration(let projectID):
             NarrationView(projectID: projectID)
         case .reviewItem:

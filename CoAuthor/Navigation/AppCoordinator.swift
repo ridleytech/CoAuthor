@@ -49,6 +49,11 @@ enum AppRoute: Hashable, Identifiable {
     case audioReview(chapterID: UUID)
     case soundCues(projectID: UUID)
     case cueDetail(cueID: UUID)
+    case documents(projectID: UUID)
+    case documentPreview(projectID: UUID, kind: String)
+    case publishingKit(projectID: UUID)
+    case exports(projectID: UUID)
+    case assetLibrary
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue

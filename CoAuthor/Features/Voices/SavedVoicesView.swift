@@ -56,6 +56,9 @@ struct SavedVoicesView: View {
     @ViewBuilder
     private func content(_ viewModel: VoicesViewModel) -> some View {
         VStack(spacing: 0) {
+            if projectID == nil {
+                LibrarySectionTabs(active: "voices")
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                     titleBlock(viewModel)

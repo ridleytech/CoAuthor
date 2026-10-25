@@ -57,7 +57,7 @@ struct ProjectSectionTabs: View {
         case .overview: .projectDetail(projectID)
         case .story: storyDestination ?? .ideaGeneration(projectID: projectID)
         case .audio: audioDestination ?? .voiceCasting(projectID: projectID)
-        case .publish: .placeholder(title: "Publishing kit", milestone: "M10")
+        case .publish: .documents(projectID: projectID)
         }
     }
 

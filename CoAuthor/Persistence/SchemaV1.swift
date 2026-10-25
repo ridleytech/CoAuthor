@@ -10,7 +10,8 @@ enum CoAuthorSchemaV1: VersionedSchema {
         [Project.self, ReviewItem.self, Idea.self,
          Outline.self, OutlineChapter.self, OutlineCharacter.self,
          ScriptChapter.self, Voice.self, CastAssignment.self,
-         GenerationJob.self, SoundCue.self]
+         GenerationJob.self, SoundCue.self, PublishingKit.self,
+         SoundAsset.self, ExportRecord.self]
     }
 }
 

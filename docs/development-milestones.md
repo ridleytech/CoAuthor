@@ -731,12 +731,99 @@ per maintainer request)**
 
 ## M10 — Documents and publishing
 
-**Status: Not started**
+**Status: Implemented (unverified — code-only pass, no build/test run
+per maintainer request)**
 
 - Scope: document views, YouTube metadata, thumbnail selection,
   export UI.
 - Design: `Documents hub`, `Document previews`, `Publishing kit`,
   `Exports`, `Asset Library`.
+
+### Implemented
+
+- **Documents hub** (Publish tab landing): "Working documents" with
+  six computed document cards — Story Outline, Full Script, Sound
+  Cue Guide, Sound Generation Tracker ("Update available" → "Update"
+  clears the flag), Voice Prompts, YouTube Upload Data ("Draft" until
+  the kit is saved). Live source lines and approval counts derive
+  from real outline/script/cue/kit records; Preview routes to
+  per-document previews (YouTube → the kit screen);
+  Download/Regenerate → M12 placeholders. Export-options card and
+  "Download complete package" CTA route to Exports.
+- **Document previews** — real content per kind: the Full Script
+  card renders Chapter 1's actual prose in serif (title, genre,
+  setting, "Chapter 1 · title", paragraphs, "Estimate unavailable ·
+  Regenerate"); the Sound tracker card renders a live cue table
+  (ID / Cue / Review / Generation, silence → "No file"); outline /
+  voice-prompts / YouTube kinds get source-accurate summary cards.
+- **Publishing kit** — "Ready to be discovered." with Kit ready /
+  Estimate unavailable badges, hero thumbnail (project cover asset),
+  Title card with live char count, Description, Tags & pinned
+  comment, Chapters & disclosure with `[timestamp]` placeholders from
+  real chapter titles, Selected-thumbnail card. Copy actions write
+  to the real clipboard with a confirmation line; "Save publishing
+  kit" persists `isSaved`/`savedAt` (flips the doc card to Current).
+- **Exports** — package-contents checklist derived from data
+  (narration "N Outdated" from `isAudioOutdated`, sounds "N Missing
+  audio files" from approved ungenerated cues), "Resolve before
+  packaging" card (issue count; "Review affected assets" → studio),
+  latest-export card, "Download does not publish to YouTube" note.
+  "Prepare selected package" persists an `ExportRecord` and a
+  "Package export" `GenerationJob` visible in Activity.
+- **Asset library** — Library tab gains a Voices / Narration /
+  Sound Effects section strip (Narration → M12 placeholder). Sound
+  Effects shows a working search, context card (project with the
+  most cues), selectable asset cards (ink border + check + waveform
+  strip), Play/Reuse/Download row, "Reuse in another project" card
+  targeting the context project's first audio cue ("Use this sound"
+  persists `reusedTargetCode`), cosmetic player strip, "Open Saved
+  Voices" CTA.
+- Models: `PublishingKit`, `SoundAsset`, `ExportRecord` in
+  `CoAuthorSchemaV1`; `PublishingRepository` protocol + impl.
+  Widow seed: saved kit matching the design's copy, three sound
+  assets, one completed export. Dev stores seeded before M10
+  self-heal — the kit is generated on demand and the asset VM
+  inserts the starter set when empty.
+- Routes: `.documents`, `.documentPreview(projectID:, kind:)`,
+  `.publishingKit`, `.exports`, `.assetLibrary`; Publish tab now
+  lands on the documents hub on every project screen.
+
+### Interpretations
+
+- All download/regenerate/format-picker actions are labeled M12
+  placeholders — no files are produced; "Prepare package" records
+  the export locally.
+- The YouTube document's "Preview" opens the kit screen — the kit
+  _is_ the upload-data document; the generic youtube preview kind
+  remains for completeness.
+- Copy actions are real clipboard writes — the only kit interaction
+  that needs no backend.
+- Reuse is a local link (`reusedTargetCode`); copying assets into
+  another project's cues is M12 backend work.
+- "Generated today, 9:13 AM" in document source lines mirrors the
+  design's sample timestamp — real generation tracking is M12.
+
+### Files
+
+- Added: `Models/PublishingKit.swift`, `Models/SoundAsset.swift`,
+  `Models/ExportRecord.swift`,
+  `Persistence/PublishingRepository.swift`,
+  `Features/Publishing/PublishingViewModel.swift` (3 VMs),
+  `Features/Publishing/DocumentsView.swift`,
+  `Features/Publishing/DocumentPreviewView.swift`,
+  `Features/Publishing/PublishingKitView.swift`,
+  `Features/Publishing/ExportsView.swift`,
+  `Features/Library/AssetLibraryViewModel.swift`,
+  `Features/Library/AssetLibraryView.swift` (+`LibrarySectionTabs`)
+- Changed: `SchemaV1.swift` (+3 models),
+  `Persistence/SampleData.swift` (kit/assets/export seeds),
+  `Navigation/AppCoordinator.swift` (+5 routes), `AppShell.swift`
+  (destinations), `ProjectSectionTabs.swift` (Publish → hub),
+  `Features/Voices/SavedVoicesView.swift` (Library section strip)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M11 — Account and settings
 
