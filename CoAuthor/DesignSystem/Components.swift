@@ -117,6 +117,9 @@ struct BrandTopBar: View {
 /// ("< The Numbers Widow" + Saved pill).
 struct BackTopBar: View {
     let title: String
+    /// Right-side status pill label ("Saved" by default; creation
+    /// flows use "Draft" / "Not Saved" / "Assigned").
+    var statusText = "Saved"
     let onBack: () -> Void
 
     var body: some View {
@@ -135,7 +138,17 @@ struct BackTopBar: View {
                     .font(.headline)
                     .lineLimit(1)
                 Spacer()
-                SavedPill()
+                if statusText == "Saved" {
+                    SavedPill()
+                } else {
+                    Text(statusText)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.caSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.caPill)
+                        .clipShape(Capsule())
+                }
             }
             .padding(.horizontal, Theme.Spacing.page)
             .padding(.vertical, 12)

@@ -492,12 +492,82 @@ run (deferred at user's request — code-only pass).
 
 ## M7 — Voice creation and casting
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: voice descriptions, auditions, selection, custom voice-slot
-  limits, save confirmations.
-- Design: `Voice Capacity/Create Voice — *`, `Casting — Full`,
-  `Audition alternatives & paid confirmation`, `Other/Voice Capacity/*`.
+### Scope implemented
+
+- 4-step voice-creation flow inside `VoiceCreationView`
+  (`VoiceCreationViewModel` holds the draft; `.voiceCreation(projectID:)`
+  route, project optional). `BackTopBar` gained a status-pill variant —
+  "Draft" / "Not Saved" / "Saved" / "Assigned" per step, matching the
+  references.
+- Step 1 Describe (`Create Voice — Describe`): "Create a voice",
+  project → Series narrator context line, 4-segment step bar, capacity
+  card, slot-use note (or "Saving needs room" when capacity is full —
+  Create Voice — Full draft variant), name field, voice-description and
+  audition-text editors (prefilled from `project.voiceDesignPrompt`),
+  step-flow note, "Generate previews" → step 2, "Choose an existing
+  voice" → context Saved Voices.
+- Step 2 Previews (`Audition alternatives & paid confirmation`):
+  "A voice you believe.", Audio tab strip, "Choose Saved Voice", capacity
+  card, three deterministic mock auditions (single-select checkbox,
+  Selected · Ready badges, "Proposed name" line, play buttons), "Request
+  another audition" card with "Paid · Est. unavailable" and "Confirm
+  paid audition" → M12 placeholder, mini player for the selected
+  preview, "Save Voice" → step 3.
+- Step 3 Save (`Save Voice — Confirmation sheet`): "Review your
+  previews", preview rows with the selected one highlighted, "Fresh
+  provider check complete" line, name/description/audition review,
+  context note — then a "Save Voice" CTA (added so the flow can
+  proceed; the reference is a sheet state without one). Saving creates
+  a persisted `Voice` (custom, provider-style `savedVoiceID`) — local
+  stand-in for the provider save until M12.
+- Step 4 Assign (`Assign new saved voice`): "Assign {name}?", saved
+  provider voice card, Project → Role row, "current → new" replacement
+  note, capacity card showing 9/10 after the save, "Confirm assignment"
+  (persists narrator, marks voice assignment, clears the project's
+  other voice assignments) and "Keep {current}".
+- Success state (`Existing voice — Assignment success`): "{name} is
+  assigned", reused/assigned confirmation card, audition row, capacity
+  card, "Capacity is unchanged" card, "Back to casting" + "Open
+  existing audio" → M8 placeholder.
+- `VoiceCapacity` is now configurable (`usedSlots`/`totalSlots`) so the
+  assign step can show post-save capacity; `MockVoiceCapacity` stays
+  8/10. Casting detail shows the "Custom voice slots are full" note
+  when no slots remain (Casting — Full variant).
+- "Create New Voice" / "Create Voice" buttons on casting and saved
+  voices now open the real flow (M7 placeholders removed).
+
+### Design interpretations recorded
+
+- The whole flow renders inside one pushed view (step state in the
+  view model) — draft state stays coherent without threading it
+  through routes.
+- Audition previews are deterministic mocks — real previews are
+  paid/provider operations (M12). "Confirm paid audition" routes to a
+  labeled placeholder, no fake success.
+- "Save Voice" creates the local `Voice` record immediately; the
+  provider save, capacity recheck and confirmation sheet are M12 work.
+  Slot count bumps to 9/10 on the assign step as the references show.
+- The assign/success screens appear only in the new-voice flow;
+  existing-voice assignment still happens instantly via M6's
+  "Use this voice".
+
+### Files
+
+- Added: `Features/Voices/VoiceCreationViewModel.swift`,
+  `Features/Voices/VoiceCreationView.swift`
+- Changed: `Persistence/VoiceRepository.swift` (configurable
+  `VoiceCapacity`), `DesignSystem/Components.swift` (`BackTopBar`
+  status-pill variant), `Navigation/AppCoordinator.swift`
+  (`.voiceCreation`), `AppShell.swift` (destination),
+  `Features/Voices/CastingView.swift` (create button + slots-full
+  variant), `Features/Voices/SavedVoicesView.swift` (create button)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M8 — Narration
 

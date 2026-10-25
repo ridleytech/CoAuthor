@@ -129,7 +129,7 @@ struct SavedVoicesView: View {
                     .foregroundStyle(Color.caInk)
                 Spacer()
                 Button {
-                    coordinator.push(.placeholder(title: "Create voice", milestone: "M7"))
+                    coordinator.push(.voiceCreation(projectID: projectID))
                 } label: {
                     Text("Create Voice")
                 }

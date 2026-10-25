@@ -69,9 +69,15 @@ struct VoiceCapacity {
     let provider = "ElevenLabs"
     let groupLabel = "Custom voices"
     let accountName = "Jordan's studio"
-    let usedSlots = 8
-    let totalSlots = 10
+    let usedSlots: Int
+    let totalSlots: Int
     let lastRefreshed: Date
+
+    init(usedSlots: Int = 8, totalSlots: Int = 10, lastRefreshed: Date = Date()) {
+        self.usedSlots = usedSlots
+        self.totalSlots = totalSlots
+        self.lastRefreshed = lastRefreshed
+    }
 
     var availableSlots: Int { totalSlots - usedSlots }
     var usedPercent: Int { usedSlots * 100 / totalSlots }

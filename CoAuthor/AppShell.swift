@@ -94,6 +94,8 @@ struct RootView: View {
             VoiceEditView(voiceID: voiceID)
         case .voiceCasting(let projectID):
             CastingView(projectID: projectID)
+        case .voiceCreation(let projectID):
+            VoiceCreationView(projectID: projectID)
         case .narration:
             DevelopmentPlaceholderView(title: "Narration studio", milestone: "M8")
         case .reviewItem:

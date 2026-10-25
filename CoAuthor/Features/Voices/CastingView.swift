@@ -69,7 +69,11 @@ struct CastingView: View {
 
                     VoiceCapacityCard(capacity: viewModel.capacity)
                     createOrChooseButtons
-                    reusingNote
+                    if viewModel.capacity.availableSlots == 0 {
+                        slotsFullNote
+                    } else {
+                        reusingNote
+                    }
                     suggestionCard(viewModel)
                     auditionCard(viewModel)
                     designPromptCard(viewModel)
@@ -99,7 +103,7 @@ struct CastingView: View {
     private var createOrChooseButtons: some View {
         VStack(spacing: 8) {
             Button {
-                coordinator.push(.placeholder(title: "Create voice", milestone: "M7"))
+                coordinator.push(.voiceCreation(projectID: projectID))
             } label: {
                 Text("Create New Voice")
             }
@@ -112,6 +116,24 @@ struct CastingView: View {
                 Text("Choose Saved Voice")
             }
             .buttonStyle(CAPrimaryButtonStyle(fullWidth: true))
+        }
+    }
+
+    /// Warm note shown when the account's custom voice slots are full
+    /// (Casting — Full reference).
+    private var slotsFullNote: some View {
+        CardContainer {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Custom voice slots are full")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.caInk)
+                Text("Your ElevenLabs account has no available custom "
+                     + "voice slots. Choose an existing voice or manage "
+                     + "your voices to make room.")
+                    .font(.caption)
+                    .foregroundStyle(Color.caSecondary)
+            }
+            .padding(Theme.Spacing.card)
         }
     }
 
