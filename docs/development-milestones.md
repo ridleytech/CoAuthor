@@ -1210,3 +1210,31 @@ exports card shares the link when no local file exists.
 Rationale: packages will outgrow API Gateway's ~10MB response cap
 once narration audio is included; base64 also inflates ~33%.
 Inline stays the default so `npm run local` needs no AWS creds.
+
+## M17 — Feature unit tests
+
+**Status: Code complete — not run (no builds per instruction)**
+
+`CoAuthorTests/FeatureTests.swift` — 15 tests in four suites. The
+project uses file-system-synchronized groups, so the file joins
+the test target automatically.
+
+- `BackendDTOTests` — canned JSON → DTO → model for ideas, cues,
+  exports (both inline-base64 and S3 `downloadUrl` package modes),
+  auth sessions (token + error shapes), and `CreditsSnapshot`
+  live-figure application. Catches contract drift between the
+  Lambda payloads and app decoding.
+- `CuesViewModelTests` — in-memory SwiftData repos; batchEligible
+  excludes silence + unapproved cues, silence cues can't be
+  selected, generateSelected queues + clears, subtitle counts.
+- `IdeaHydrationTests` — `StubBackendClient` (decodes canned JSON,
+  no network) + `BackendConfiguration.useBackend` toggled per
+  test. Covers backend hydration, the double-load dedup race, and
+  the mock fallback on backend failure.
+- `CreateAccountValidationTests` — all four field validators,
+  errors hidden until submit, and `serverError` surfacing when the
+  backend is unreachable.
+
+Pending: `xcodebuild test` / Xcode test run, plus follow-on
+coverage (outline hydration, exports package write, voice sync
+merge).
