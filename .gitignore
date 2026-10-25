@@ -30,5 +30,5 @@ fastlane/test_output
 # Designs
 Designs/
 
-# Local backend scaffold
-backend/
+# Local backend scaffold (repo root only — not CoAuthor/Backend/)
+/backend/
