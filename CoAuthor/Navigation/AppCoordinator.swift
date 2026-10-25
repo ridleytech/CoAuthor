@@ -47,6 +47,8 @@ enum AppRoute: Hashable, Identifiable {
     case voiceCreation(projectID: UUID?)
     case narrationStudio(projectID: UUID)
     case audioReview(chapterID: UUID)
+    case soundCues(projectID: UUID)
+    case cueDetail(cueID: UUID)
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue

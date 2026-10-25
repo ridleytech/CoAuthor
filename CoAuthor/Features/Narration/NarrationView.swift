@@ -125,6 +125,17 @@ struct NarrationView: View {
                     }
                     .foregroundStyle(Color.caInk)
                 }
+                Button {
+                    coordinator.push(.soundCues(projectID: project.id))
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Sound cues")
+                            .font(.subheadline.weight(.medium))
+                        Image(systemName: "arrow.right")
+                            .font(.caption.weight(.medium))
+                    }
+                    .foregroundStyle(Color.caInk)
+                }
             }
             .padding(Theme.Spacing.card)
         }

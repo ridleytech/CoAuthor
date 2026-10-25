@@ -505,6 +505,75 @@ enum SampleData {
         ]
     }
 
+    /// Sound cues matching the Sound-cues reference — SC-01…SC-06 with
+    /// the design's review/generation state mix (2 selected).
+    static func makeSoundCues() -> [SoundCue] {
+        let widowID = UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!
+        return [
+            SoundCue(
+                projectID: widowID, number: 1, title: "Kitchen room tone",
+                chapterTitle: "The Envelope", importance: "Core",
+                category: "Ambience",
+                sourcePassage: "\"The envelope was waiting beneath the sugar "
+                    + "bowl. Evelyn knew it had not been there when she left "
+                    + "for the funeral.\"",
+                placementText: "Start before first line; fade in 1.5 sec.\n"
+                    + "Stop at \"She lifted the bowl\"; fade out 2 sec.\n"
+                    + "Keep well below narration; duck under dialogue.",
+                generationPrompt: "Quiet Detroit kitchen, 1972. Low "
+                    + "refrigerator hum, distant traffic, faint radiator "
+                    + "tick. No voices, no music. Seamless, restrained "
+                    + "ambience.",
+                reviewState: "Approved", generationState: "Ready",
+                isSelected: true,
+                alternativeLabels: ["A · Kitchen ambience", "B · Kitchen ambience"]
+            ),
+            SoundCue(
+                projectID: widowID, number: 2, title: "Bus at the curb",
+                chapterTitle: "The Envelope", importance: "Optional",
+                category: "Spot",
+                sourcePassage: "\"Outside, a bus sighed at the curb.\"",
+                reviewState: "Suggested", generationState: "Not generated",
+                isSelected: true,
+                alternativeLabels: ["A · Bus pass", "B · Bus pass"]
+            ),
+            SoundCue(
+                projectID: widowID, number: 3, title: "The unmarked name",
+                chapterTitle: "The Envelope", importance: "Core",
+                category: "Silence",
+                sourcePassage: "\"Just her name, written by someone who had "
+                    + "taken care not to make it look familiar.\"",
+                reviewState: "Approved",
+                generationState: "No audio file needed"
+            ),
+            SoundCue(
+                projectID: widowID, number: 4, title: "Basement hum",
+                chapterTitle: "The Basement Desk", importance: "Core",
+                category: "Ambience",
+                sourcePassage: "\"The basement light came on reluctantly.\"",
+                reviewState: "Approved", generationState: "Not generated",
+                alternativeLabels: ["A · Basement hum", "B · Basement hum"]
+            ),
+            SoundCue(
+                projectID: widowID, number: 5,
+                title: "Dexter street transition",
+                chapterTitle: "Odessa on Dexter", importance: "Optional",
+                category: "Transition",
+                sourcePassage: "\"Odessa was already on the porch.\"",
+                reviewState: "Suggested", generationState: "Not generated",
+                alternativeLabels: ["A · Street bed", "B · Street bed"]
+            ),
+            SoundCue(
+                projectID: widowID, number: 6, title: "Key on the table",
+                chapterTitle: "The House Key", importance: "Optional",
+                category: "Spot",
+                sourcePassage: "\"He put the key beside her cup.\"",
+                reviewState: "Skipped", generationState: "Not generated",
+                alternativeLabels: ["A · Key set-down", "B · Key set-down"]
+            ),
+        ]
+    }
+
     /// Inserts a fresh sample set. Used by previews, tests, and the
     /// repository's one-time development seed.
     @MainActor
@@ -524,5 +593,6 @@ enum SampleData {
             basementDeskID: scriptChapters.count > 1 ? scriptChapters[1].id : nil,
             envelopeID: scriptChapters.first?.id
         ) { context.insert(job) }
+        for cue in makeSoundCues() { context.insert(cue) }
     }
 }

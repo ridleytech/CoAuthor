@@ -648,11 +648,86 @@ run (deferred at user's request — code-only pass).
 
 ## M9 — Sound cues
 
-**Status: Not started**
+**Status: Implemented (unverified — code-only pass, no build/test run
+per maintainer request)**
 
 - Scope: cue list/detail, approval, silence cues, generation and
   asset selection.
 - Design: `Sound cues`, `Cue detail, edit & audition alternatives`.
+
+### Implemented
+
+- `SoundCue` model (`code` SC-NN, chapter, importance, category,
+  source passage, placement text, generation prompt, review state,
+  generation state, batch selection, alternative labels + preferred
+  take) registered in `CoAuthorSchemaV1`; `CueRepository` protocol +
+  SwiftData implementation.
+- `SoundCuesView` — "Sound cues" + live subtitle ("N cues · N
+  approved · Script rN · N selected"), filter card (chapter menu,
+  Core/Optional, review status, generation), "Select approved →"
+  (selects every approved cue that needs audio), cue cards with
+  Approved/Suggested/Skipped + Ready/Not generated/Queued/"No audio
+  file needed" badges, selected-dot toggle, "N more cues · Load →"
+  card with the design's silence-eligibility note (shown standalone
+  when everything is loaded), "Generate selected cues" CTA.
+- `CueDetailView` — cue title + "SC-NN · chapter · Core ambience ·
+  Script rN" subtitle, status badges, exact source passage,
+  placement & mixing with a working "Edit cue instructions" editor,
+  generation-prompt card with Approve/Reject/Skip actions
+  (persisted), "Compare alternatives" A/B take picker (preferred
+  take persisted; "Use existing" → M10 asset-library placeholder),
+  batch-confirmation card ("SC-01 + SC-04 · N approved audio cues.
+  Silence SC-03 excluded. Paid generation requires confirmation.")
+  whose confirm queues the approved audio batch, cosmetic take
+  player strip + "Select preferred sound" CTA.
+- Silence cues get a reduced detail (source + placement + a
+  "no audio generated" note — prompt/alternatives/player hidden)
+  and are excluded from batch eligibility and the selection dot.
+- `MockCueGenerator` produces a deterministic starter set (ambience
+  per early chapter + one silence cue) for projects that reach the
+  screen with no cues — no AI calls.
+- `Project.cuesApproved`/`cuesTotal` are synced from real cue
+  records on load and after review changes, so the overview pill
+  stays accurate.
+- Routes: `.soundCues(projectID:)`, `.cueDetail(cueID:)`; entry
+  point via a "Sound cues →" link on the narration studio's
+  narrator card.
+- Seed: SC-01…SC-06 for The Numbers Widow matching the design's
+  state mix (2 selected, 3 approved incl. 1 silence, 1 skipped).
+
+### Interpretations
+
+- The list's "32 cues" is the design's sample total — the app shows
+  real counts; the "more cues" card appears only when filters leave
+  cues hidden beyond the visible limit.
+- The card's action line ("Source / Placement / Edit →" / "Review
+  silence cue →") routes to the same detail screen — the reference
+  provides no separate source/placement sheets.
+- "Select preferred sound" dismisses the detail — the preferred
+  take is already persisted when a row is tapped.
+- Batch confirm sets approved audio cues to "Queued" (local state;
+  paid/provider generation is M12). The design's "Estimate
+  unavailable" copy is kept verbatim.
+- Entry point: no design shows how cues are reached, so a "Sound
+  cues →" link was added to the narration studio's narrator card —
+  the only Audio screen that leads to both cue screens in the
+  references.
+
+### Files
+
+- Added: `Models/SoundCue.swift`, `Persistence/CueRepository.swift`,
+  `Features/Cues/CuesViewModel.swift`,
+  `Features/Cues/SoundCuesView.swift`,
+  `Features/Cues/CueDetailView.swift`
+- Changed: `SchemaV1.swift` (+`SoundCue`),
+  `Persistence/SampleData.swift` (+6 seeded cues),
+  `Navigation/AppCoordinator.swift` (+2 routes), `AppShell.swift`
+  (destinations), `Features/Narration/NarrationView.swift`
+  ("Sound cues →" link)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M10 — Documents and publishing
 

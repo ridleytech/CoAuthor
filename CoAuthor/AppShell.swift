@@ -104,6 +104,10 @@ struct RootView: View {
             NarrationView(projectID: projectID)
         case .audioReview(let chapterID):
             AudioReviewView(chapterID: chapterID)
+        case .soundCues(let projectID):
+            SoundCuesView(projectID: projectID)
+        case .cueDetail(let cueID):
+            CueDetailView(cueID: cueID)
         case .narration(let projectID):
             NarrationView(projectID: projectID)
         case .reviewItem:
