@@ -102,13 +102,22 @@ final class AssetLibraryViewModel {
     }
 
     /// Backend path — fetches the asset catalog from the API;
-    /// falls back to the local starter set on failure.
+    /// falls back to the local starter set on failure. Deduped by
+    /// title+project so repeated hydration can't duplicate rows.
     private func hydrateAssets() async {
         do {
             let dtos: [BackendDTO.Asset] = try await backendClient
                 .get("/v1/assets")
+            // Re-fetch inside the async gap — a second load() may have
+            // populated the store while the request was in flight.
+            var keys = Set(try publishingRepository.fetchAssets().map {
+                "\($0.title)|\($0.projectTitle)"
+            })
             for dto in dtos {
+                let key = "\(dto.title)|\(dto.projectTitle)"
+                guard !keys.contains(key) else { continue }
                 try? publishingRepository.insertAsset(dto.model())
+                keys.insert(key)
             }
             load()
         } catch {

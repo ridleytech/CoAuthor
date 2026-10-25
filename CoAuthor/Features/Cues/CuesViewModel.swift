@@ -127,13 +127,21 @@ final class CuesViewModel {
     }
 
     /// Backend path — fetches the cue set from the API; falls back
-    /// to the mock generator on failure.
+    /// to the mock generator on failure. Deduped by cue number so
+    /// repeated hydration can't insert SC-NN twice.
     private func hydrateCues(_ project: Project) async {
         do {
             let dtos: [BackendDTO.Cue] = try await backendClient
                 .get("/v1/projects/\(projectID.uuidString)/cues")
-            for dto in dtos {
+            // Re-fetch inside the async gap — a second load() may have
+            // populated the store while the request was in flight.
+            var numbers = Set(
+                try cueRepository.fetchCues(projectID: projectID)
+                    .map(\.number)
+            )
+            for dto in dtos where !numbers.contains(dto.number) {
                 try? cueRepository.insert(dto.model(projectID: projectID))
+                numbers.insert(dto.number)
             }
             cues = try cueRepository.fetchCues(projectID: projectID)
             syncProjectCounts()

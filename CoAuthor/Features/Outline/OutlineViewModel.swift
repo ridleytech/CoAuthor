@@ -92,11 +92,20 @@ final class OutlineViewModel {
 
     /// Backend path — fetches the outline from the API and hydrates
     /// the local store; falls back to the mock generator on failure.
+    /// Idempotent: re-checks for an existing outline after the await
+    /// and dedupes chapters by number / characters by name.
     private func hydrateOutline() async {
         guard let project else { return }
         do {
             let dto: BackendDTO.Outline = try await backendClient
                 .get("/v1/projects/\(projectID.uuidString)/outline")
+            // Re-check inside the async gap — a second load() may have
+            // created an outline while the request was in flight.
+            if let existing = try outlineRepository.fetchOutline(projectID: projectID) {
+                outline = existing
+                try reloadSections()
+                return
+            }
             let newOutline = Outline(
                 projectID: projectID,
                 revision: dto.revision,

@@ -59,16 +59,25 @@ final class GenerationViewModel {
     }
 
     /// Backend path — fetches the activity feed from the API when
-    /// the local store is empty (avoids duplicating local jobs).
+    /// the local store is empty. Deduped by project+kind+subject so
+    /// repeated hydration can't insert the same job twice.
     private func hydrateJobs() async {
         do {
             let dtos: [BackendDTO.Job] = try await backendClient.get("/v1/jobs")
             let projects = try projectsRepository.fetchProjects()
+            // Re-fetch inside the async gap — a second load() may have
+            // populated the store while the request was in flight.
+            var keys = Set(try repository.fetchJobs().map {
+                "\($0.projectTitle)|\($0.kind)|\($0.subject)"
+            })
             for dto in dtos {
+                let key = "\(dto.projectTitle)|\(dto.kind)|\(dto.subject)"
+                guard !keys.contains(key) else { continue }
                 let projectID = projects.first {
                     $0.title == dto.projectTitle
                 }?.id ?? UUID()
                 try? repository.insert(dto.model(projectID: projectID))
+                keys.insert(key)
             }
             jobs = try repository.fetchJobs()
         } catch {

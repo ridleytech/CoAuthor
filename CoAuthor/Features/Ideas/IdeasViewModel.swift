@@ -96,15 +96,24 @@ final class IdeasViewModel {
 
     /// Backend path — fetches ideas from the API, persists them via
     /// the repository, and falls back to the mock generator when the
-    /// request fails.
+    /// request fails. Deduped by title so repeated hydration can't
+    /// insert the same idea twice.
     private func hydrateIdeas() async {
         guard let project else { return }
         do {
             let dtos: [BackendDTO.Idea] = try await backendClient
                 .get("/v1/projects/\(projectID.uuidString)/ideas")
-            for (index, dto) in dtos.enumerated() {
-                let idea = dto.model(projectID: projectID, sortOrder: index)
+            // Re-fetch inside the async gap — a second load() may have
+            // populated the store while the request was in flight.
+            let existing = try ideasRepository.fetchIdeas(projectID: projectID)
+            var titles = Set(existing.map(\.title))
+            for (index, dto) in dtos.enumerated() where !titles.contains(dto.title) {
+                let idea = dto.model(
+                    projectID: projectID,
+                    sortOrder: existing.count + index
+                )
                 try? ideasRepository.insert(idea)
+                titles.insert(dto.title)
             }
             ideas = try ideasRepository.fetchIdeas(projectID: projectID)
         } catch {

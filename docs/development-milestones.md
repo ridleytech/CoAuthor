@@ -1043,3 +1043,54 @@ pending.
 
 - Simulator VoiceOver + Accessibility Inspector pass, Dynamic Type
   audit at AX sizes, and real-device check — requires a build.
+
+## M14 — Provider-mode switch + hydration dedup
+
+**Status: Code complete — verified at handler level; app build pending**
+
+### Backend (gitignored scaffold)
+
+- `src/config.mjs` — `PROVIDER_MODE=stub|live` env switch, the
+  backend-side counterpart of `BackendConfiguration.useBackend`.
+  Per-provider `enabled` checks: live mode + key present → real
+  calls; either missing → that provider stays stubbed, so modes
+  can mix during integration.
+- `src/providers/openai.mjs` — `generateIdeas` / `generateOutline`
+  via chat completions (JSON mode), prompts shaped to the app's
+  `BackendDTO` decoding shapes.
+- `src/providers/elevenlabs.mjs` — `textToSpeech` (inline base64
+  audio until object storage exists) and `credits` (real
+  subscription balance via `/v1/user/subscription`).
+- POST generation routes dispatch live when the provider is
+  enabled, else honest stubs; provider failures return
+  `502 provider_error` — the app falls back to mock on any error.
+- `GET /health` reports `{mode, openai, elevenlabs}` status;
+  `GET /v1/credits` returns the live balance when enabled.
+- `.env.example` documents the variables; `local.mjs` loads
+  `backend/.env` when present.
+
+### App-side dedup
+
+Hydration paths upgraded from insert-when-empty to keyed upserts —
+each re-fetches inside the async gap (closing the double-`load()`
+race) and skips rows whose stable key already exists, so repeated
+hydration is idempotent and never clobbers local edits:
+
+- Ideas — keyed by title · Cues — by cue number
+- Jobs — by project+kind+subject · Assets — by title+project
+- Outline — re-checks for an existing outline after the await;
+  inserts children only when none exists
+
+### Verified
+
+- Stub mode: all routes unchanged; health reports stub.
+- Live mode, no keys: per-provider stub degradation.
+- Live mode, bogus key: real OpenAI call attempted, 401 → clean
+  `502 provider_error`.
+- Pending: real-key end-to-end, app build.
+
+### Still deferred
+
+- S3/object storage for generated audio (returned inline for now).
+- Voices catalog, document generation, exports packaging, auth.
+- `CoAuthorSchemaV1` version bump before any shipped store.
