@@ -62,16 +62,20 @@ struct RootView: View {
     @ViewBuilder
     private func destination(_ route: AppRoute) -> some View {
         switch route {
-        case .projectDetail:
-            DevelopmentPlaceholderView(title: "Project overview", milestone: "M2")
+        case .projectDetail(let id):
+            ProjectOverviewView(projectID: id)
         case .newProject:
-            DevelopmentPlaceholderView(title: "New project", milestone: "M2")
+            NewProjectView()
+        case .ideaGeneration:
+            DevelopmentPlaceholderView(title: "Generated ideas", milestone: "M3")
         case .narration:
             DevelopmentPlaceholderView(title: "Narration studio", milestone: "M8")
         case .reviewItem:
             DevelopmentPlaceholderView(title: "Review item", milestone: "M8/M9")
         case .reviewQueue:
             DevelopmentPlaceholderView(title: "Review queue", milestone: "M8")
+        case .placeholder(let title, let milestone):
+            DevelopmentPlaceholderView(title: title, milestone: milestone)
         }
     }
 

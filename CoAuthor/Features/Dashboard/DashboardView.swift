@@ -9,7 +9,7 @@ struct DashboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            BrandTopBar()
             ScrollView {
                 if viewModel.isEmpty {
                     emptyState
@@ -18,38 +18,10 @@ struct DashboardView: View {
                 }
             }
             .background(Color.caBackground)
-            bottomCTA
+            BottomCTA(title: "New project") { coordinator.push(.newProject) }
         }
         .background(Color.caBackground)
         .onAppear { viewModel.load() }
-    }
-
-    // MARK: Fixed chrome
-
-    private var header: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("CoAuthor")
-                    .font(.title3.weight(.bold))
-                Spacer()
-                SavedPill()
-            }
-            .padding(.horizontal, Theme.Spacing.page)
-            .padding(.vertical, 12)
-            Divider().overlay(Color.caHairline)
-        }
-        .background(Color.caSurface)
-    }
-
-    private var bottomCTA: some View {
-        VStack(spacing: 0) {
-            Divider().overlay(Color.caHairline)
-            Button("New project") { coordinator.push(.newProject) }
-                .buttonStyle(CAPrimaryButtonStyle(fullWidth: true))
-                .padding(.horizontal, Theme.Spacing.page)
-                .padding(.vertical, 10)
-        }
-        .background(Color.caSurface)
     }
 
     // MARK: Scrollable content

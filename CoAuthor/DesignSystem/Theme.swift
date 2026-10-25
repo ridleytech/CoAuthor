@@ -45,6 +45,8 @@ extension Color {
     static let caPill = Color(red: 0.949, green: 0.949, blue: 0.957)
     /// Fallback for missing cover art.
     static let caCoverFallback = Color(red: 0.13, green: 0.16, blue: 0.18)
+    /// Form input fill — near-white with a hint of gray.
+    static let caField = Color(red: 0.972, green: 0.972, blue: 0.976)
 }
 
 extension Font {

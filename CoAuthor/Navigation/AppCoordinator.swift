@@ -32,9 +32,12 @@ enum AppTab: Hashable, CaseIterable {
 enum AppRoute: Hashable, Identifiable {
     case projectDetail(UUID)
     case newProject
+    case ideaGeneration(projectID: UUID)
     case narration(projectID: UUID)
     case reviewItem(UUID)
     case reviewQueue
+    /// Stand-in destination for screens owned by later milestones.
+    case placeholder(title: String, milestone: String)
 
     var id: Self { self }
 }
@@ -58,6 +61,12 @@ final class AppCoordinator {
     func push(_ route: AppRoute) {
         var path = paths[selectedTab] ?? NavigationPath()
         path.append(route)
+        paths[selectedTab] = path
+    }
+
+    func pop() {
+        guard var path = paths[selectedTab], !path.isEmpty else { return }
+        path.removeLast()
         paths[selectedTab] = path
     }
 

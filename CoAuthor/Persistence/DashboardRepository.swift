@@ -7,6 +7,8 @@ import SwiftData
 protocol DashboardRepository {
     /// Projects sorted by most recently edited first.
     func fetchProjects() throws -> [Project]
+    /// A single project by stable identifier.
+    func fetchProject(id: UUID) throws -> Project?
     /// Review-queue items sorted by `sortOrder`.
     func fetchReviewItems() throws -> [ReviewItem]
     func insert(_ project: Project) throws
@@ -32,6 +34,13 @@ final class SwiftDataDashboardRepository: DashboardRepository {
             sortBy: [SortDescriptor(\.lastEditedAt, order: .reverse)]
         )
         return try context.fetch(descriptor)
+    }
+
+    func fetchProject(id: UUID) throws -> Project? {
+        let descriptor = FetchDescriptor<Project>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try context.fetch(descriptor).first
     }
 
     func fetchReviewItems() throws -> [ReviewItem] {

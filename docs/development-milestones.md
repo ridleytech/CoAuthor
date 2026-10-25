@@ -167,15 +167,57 @@ search field, filter controls, pull-to-refresh, project deletion UI.
 
 ## M2 — Project creation
 
-**Status: Not started**
+**Status: In progress** — implemented; build/visual verification not yet
+run (deferred at user's request — code-only pass).
 
-- Scope: new-project form (premise, title, genre, setting, tone,
-  runtime/format, workflow picker, creative preferences), validation,
-  save/cancel, navigation to project overview.
-- Design: `Full Content/Create project`, `Full Content/Project overview`.
-- Dependencies: M1 `Project` model, repository, routes.
-- Acceptance: validated form persists a `Project`; cancel discards;
-  project overview route renders real project data.
+### Scope implemented
+
+- New-project form ("Start with a story. Step 1 of 3") per
+  `Full Content/Create project`: premise editor (focus ring, required),
+  working title, genre/setting, tone, runtime/format pickers, workflow
+  radio cards (Guided / Complete package), read-only creative-preferences
+  summary, "Generate story ideas" CTA disabled until premise is non-empty.
+- Project overview per `Full Content/Project overview`: back header,
+  Overview/Story/Audio/Publish tab strip (non-Overview tabs route to
+  labeled placeholders), serif title + pills, Your Story card, production
+  stages checklist, derived recommended-next-step card, recent-activity
+  card, "Review chapter audio" bottom CTA.
+- Save persists `Project` via repository then routes to the idea
+  generation placeholder (M3). Cancel/back discards without saving.
+- Shared chrome extracted: `BrandTopBar`, `BackTopBar`, `BottomCTA`,
+  `CAFormField`, `CAPickerField`, `RadioOptionCard`.
+- `Project` model extended (additive, defaults — lightweight-migration
+  safe): `toneAudience`, `workflow`, `narratorName`, `scriptRevision`,
+  and production-stage summary fields.
+- `AppCoordinator.pop()` + `.ideaGeneration` and `.placeholder` routes.
+- Continue card falls back to `stageLabel` when a project has no
+  chapters yet (avoids "0 of 0 narrated" for new projects).
+
+### Design interpretations recorded
+
+- "Recent activity" derives entries from created/edited timestamps;
+  rich activity feed is a later-milestone concern.
+- "Recommended next step" shows the first incomplete production stage;
+  the design's stale-asset warning ("audio outdated") requires M8/M9
+  asset-revision tracking.
+- "Edit →" (creative preferences) and "Change →" (workflow) route to
+  labeled placeholders — real screens land with idea generation (M3).
+
+### Files added/changed
+
+- Added: `Features/Projects/NewProjectView.swift`,
+  `NewProjectViewModel.swift`, `ProjectOverviewView.swift`,
+  `ProjectOverviewViewModel.swift`
+- Changed: `Models/Project.swift`, `Persistence/SampleData.swift`,
+  `Persistence/DashboardRepository.swift` (`fetchProject(id:)`),
+  `Navigation/AppCoordinator.swift` (`pop`, routes), `AppShell.swift`
+  (real destinations), `DesignSystem/Components.swift`, `Theme.swift`,
+  `DashboardComponents.swift` (continue-card fallback), `DashboardView.swift`
+  (shared chrome)
+
+### Validation
+
+- Pending: build, unit tests, simulator screenshot.
 
 ## M3 — Ideas
 

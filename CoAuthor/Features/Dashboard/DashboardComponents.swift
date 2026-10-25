@@ -18,7 +18,9 @@ struct ContinueCard: View {
                 HStack {
                     SectionLabel("Continue")
                     Spacer()
-                    Text("\(project.narratedChapters) of \(project.totalChapters) narrated")
+                    Text(project.totalChapters > 0
+                         ? "\(project.narratedChapters) of \(project.totalChapters) narrated"
+                         : project.stageLabel)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Color.caSecondary)
                         .padding(.horizontal, 10)
