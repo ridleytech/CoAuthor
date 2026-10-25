@@ -23,12 +23,24 @@ final class CoAuthorUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testDashboardRendersAndScrollsToReviewQueue() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssertTrue(app.staticTexts["Your stories"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["CONTINUE"].exists)
+        XCTAssertTrue(app.buttons["New project"].exists)
+
+        // Content below the fold must be reachable by scrolling.
+        let reviewQueue = app.staticTexts["Review queue"]
+        while !reviewQueue.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(reviewQueue.isHittable)
+
+        // Fixed chrome must not scroll away or swallow content.
+        XCTAssertTrue(app.staticTexts["CoAuthor"].isHittable)
+        XCTAssertTrue(app.buttons["Projects"].isHittable)
     }
 
     @MainActor

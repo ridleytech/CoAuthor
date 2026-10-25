@@ -1,0 +1,122 @@
+import Foundation
+import SwiftData
+
+/// Deterministic development/preview content matching the dashboard
+/// design reference. Dates are relative to "now" so the seeded data
+/// always reads naturally ("today", "yesterday").
+enum SampleData {
+
+    /// Fresh `Project` instances on every call — `@Model` objects are
+    /// bound to a context on insert, so shared instances cannot be
+    /// inserted into more than one store.
+    static func makeProjects() -> [Project] {
+        let now = Date()
+        let cal = Calendar.current
+        return [
+            Project(
+                id: UUID(uuidString: "A1111111-1111-1111-1111-111111111111")!,
+                title: "The Numbers Widow",
+                genre: "Historical crime fiction",
+                settingDescriptor: "Detroit, November 1972",
+                premise: "Bookkeeper Evelyn Price investigates missing money "
+                    + "after her husband's murder. She must discover the truth "
+                    + "before his numbers-operation debt threatens her children.",
+                narratorFormat: "Single narrator",
+                runtimeTargetMinutes: 60,
+                totalChapters: 10,
+                narratedChapters: 3,
+                stageLabel: "Narration in progress",
+                status: .inProgress,
+                coverImageName: "DashboardHero",
+                createdAt: cal.date(byAdding: .day, value: -14, to: now)!,
+                lastEditedAt: cal.date(byAdding: .hour, value: -2, to: now)!
+            ),
+            Project(
+                id: UUID(uuidString: "B2222222-2222-2222-2222-222222222222")!,
+                title: "The Last Lightkeeper",
+                genre: "Coastal mystery",
+                settingDescriptor: "Lake Michigan, 1986",
+                premise: "A retiring lightkeeper uncovers a smuggling route "
+                    + "recorded in her predecessor's logbooks.",
+                narratorFormat: "Single narrator",
+                runtimeTargetMinutes: 45,
+                totalChapters: 8,
+                narratedChapters: 0,
+                stageLabel: "Outline review",
+                status: .review,
+                createdAt: cal.date(byAdding: .day, value: -6, to: now)!,
+                lastEditedAt: cal.date(byAdding: .day, value: -1, to: now)!
+            ),
+            Project(
+                id: UUID(uuidString: "C3333333-3333-3333-3333-333333333333")!,
+                title: "A Map of Small Returns",
+                genre: "Literary fiction",
+                settingDescriptor: "Chicago, present day",
+                premise: "A debt collector keeps a ledger of everything he "
+                    + "has taken — and everything he owes.",
+                narratorFormat: "Single narrator",
+                runtimeTargetMinutes: 30,
+                totalChapters: 6,
+                narratedChapters: 0,
+                stageLabel: "Premise saved",
+                status: .draft,
+                createdAt: cal.date(byAdding: .day, value: -4, to: now)!,
+                lastEditedAt: cal.date(byAdding: .day, value: -4, to: now)!
+            ),
+        ]
+    }
+
+    /// Six queued items; the dashboard card previews the first two.
+    static func makeReviewItems() -> [ReviewItem] { [
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444441")!,
+            title: "The Envelope",
+            detail: "Audio needs source review",
+            actionLabel: "Review",
+            sortOrder: 0
+        ),
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444442")!,
+            title: "Kitchen room tone",
+            detail: "Suggestion to approve",
+            actionLabel: "Approve",
+            sortOrder: 1
+        ),
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444443")!,
+            title: "Chapter 2 ambience",
+            detail: "Audio needs source review",
+            actionLabel: "Review",
+            sortOrder: 2
+        ),
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444444")!,
+            title: "Train platform",
+            detail: "Suggestion to approve",
+            actionLabel: "Approve",
+            sortOrder: 3
+        ),
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444445")!,
+            title: "The Basement Desk",
+            detail: "Audio needs source review",
+            actionLabel: "Review",
+            sortOrder: 4
+        ),
+        ReviewItem(
+            id: UUID(uuidString: "D4444444-4444-4444-4444-444444444446")!,
+            title: "Rain on windows",
+            detail: "Suggestion to approve",
+            actionLabel: "Approve",
+            sortOrder: 5
+        ),
+    ] }
+
+    /// Inserts a fresh sample set. Used by previews, tests, and the
+    /// repository's one-time development seed.
+    @MainActor
+    static func insertSamples(into context: ModelContext) {
+        for project in makeProjects() { context.insert(project) }
+        for item in makeReviewItems() { context.insert(item) }
+    }
+}

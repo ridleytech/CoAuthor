@@ -6,31 +6,90 @@
 //
 
 import XCTest
+import SwiftData
 @testable import CoAuthor
 
-final class CoAuthorTests: XCTestCase {
+@MainActor
+final class DashboardRepositoryTests: XCTestCase {
+
+    private var container: ModelContainer!
+    private var defaults: UserDefaults!
+    private var repository: SwiftDataDashboardRepository!
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        let schema = CoAuthorSchema.current
+        container = try ModelContainer(
+            for: schema,
+            configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]
+        )
+        defaults = UserDefaults(suiteName: "test-\(UUID().uuidString)")!
+        repository = SwiftDataDashboardRepository(
+            context: container.mainContext,
+            defaults: defaults
+        )
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        container = nil
+        defaults = nil
+        repository = nil
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testSeedWritesSampleDataOnce() throws {
+        try repository.seedDevelopmentDataIfNeeded()
+        XCTAssertEqual(try repository.fetchProjects().count, 3)
+        XCTAssertEqual(try repository.fetchReviewItems().count, 6)
+
+        // Second call must not duplicate records.
+        try repository.seedDevelopmentDataIfNeeded()
+        XCTAssertEqual(try repository.fetchProjects().count, 3)
+        XCTAssertEqual(try repository.fetchReviewItems().count, 6)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    func testFetchProjectsSortedByLastEditedDescending() throws {
+        SampleData.insertSamples(into: container.mainContext)
+        try container.mainContext.save()
+
+        let projects = try repository.fetchProjects()
+        XCTAssertEqual(projects.count, 3)
+        XCTAssertEqual(projects.first?.title, "The Numbers Widow")
+        XCTAssertTrue(projects[0].lastEditedAt >= projects[1].lastEditedAt)
+        XCTAssertTrue(projects[1].lastEditedAt >= projects[2].lastEditedAt)
+    }
+
+    func testSeedDoesNotRecreateDeletedRecords() throws {
+        try repository.seedDevelopmentDataIfNeeded()
+        for project in try repository.fetchProjects() {
+            try repository.delete(project)
         }
+        XCTAssertTrue(try repository.fetchProjects().isEmpty)
+
+        // Records the user deleted must stay deleted across "relaunches".
+        try repository.seedDevelopmentDataIfNeeded()
+        XCTAssertTrue(try repository.fetchProjects().isEmpty)
     }
 
+    func testViewModelSlicesFeaturedRecentAndReviewPreview() throws {
+        SampleData.insertSamples(into: container.mainContext)
+        try container.mainContext.save()
+        defaults.set(true, forKey: SwiftDataDashboardRepository.seededKey)
+
+        let viewModel = DashboardViewModel(repository: repository)
+        viewModel.load()
+
+        XCTAssertEqual(viewModel.featured?.title, "The Numbers Widow")
+        XCTAssertEqual(viewModel.recentProjects.count, 2)
+        XCTAssertEqual(viewModel.remainingProjectCount, 2)
+        XCTAssertEqual(viewModel.previewReviewItems.count, 2)
+        XCTAssertEqual(viewModel.reviewItems.count, 6)
+    }
+
+    func testViewModelEmptyState() throws {
+        // Pretend seeding already ran so load() skips it.
+        defaults.set(true, forKey: SwiftDataDashboardRepository.seededKey)
+        let viewModel = DashboardViewModel(repository: repository)
+        viewModel.load()
+        XCTAssertTrue(viewModel.isEmpty)
+        XCTAssertNil(viewModel.featured)
+    }
 }
