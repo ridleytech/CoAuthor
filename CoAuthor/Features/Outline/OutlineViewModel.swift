@@ -6,6 +6,7 @@ final class OutlineViewModel {
     let projectID: UUID
     private let projectsRepository: any DashboardRepository
     private let outlineRepository: any OutlineRepository
+    private let backendClient: any BackendClient
     private let generator = MockOutlineGenerator()
 
     private(set) var project: Project?
@@ -20,11 +21,13 @@ final class OutlineViewModel {
     init(
         projectID: UUID,
         projectsRepository: any DashboardRepository,
-        outlineRepository: any OutlineRepository
+        outlineRepository: any OutlineRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.outlineRepository = outlineRepository
+        self.backendClient = backendClient
     }
 
     // MARK: Derived state
@@ -55,27 +58,87 @@ final class OutlineViewModel {
             project = try projectsRepository.fetchProject(id: projectID)
             if let existing = try outlineRepository.fetchOutline(projectID: projectID) {
                 outline = existing
+                try reloadSections()
+            } else if BackendConfiguration.shared.useBackend {
+                Task { await hydrateOutline() }
             } else if let project {
-                // Deterministic local generation — no AI calls.
-                let generated = generator.generate(for: project)
-                try outlineRepository.insert(generated.outline)
-                for chapter in generated.chapters {
-                    try outlineRepository.insert(chapter)
-                }
-                for character in generated.characters {
-                    try outlineRepository.insert(character)
-                }
-                project.hasOutline = true
-                try projectsRepository.saveChanges()
-                outline = generated.outline
-            }
-            if let outline {
-                chapters = try outlineRepository.fetchChapters(outlineID: outline.id)
-                characters = try outlineRepository.fetchCharacters(outlineID: outline.id)
+                generateLocally(project)
             }
             loadError = nil
         } catch {
             loadError = "Couldn't load the outline."
+        }
+    }
+
+    /// Mock path — deterministic, no AI calls.
+    private func generateLocally(_ project: Project) {
+        do {
+            let generated = generator.generate(for: project)
+            try outlineRepository.insert(generated.outline)
+            for chapter in generated.chapters {
+                try outlineRepository.insert(chapter)
+            }
+            for character in generated.characters {
+                try outlineRepository.insert(character)
+            }
+            project.hasOutline = true
+            try projectsRepository.saveChanges()
+            outline = generated.outline
+            try reloadSections()
+        } catch {
+            loadError = "Couldn't load the outline."
+        }
+    }
+
+    /// Backend path — fetches the outline from the API and hydrates
+    /// the local store; falls back to the mock generator on failure.
+    private func hydrateOutline() async {
+        guard let project else { return }
+        do {
+            let dto: BackendDTO.Outline = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/outline")
+            let newOutline = Outline(
+                projectID: projectID,
+                revision: dto.revision,
+                sections: dto.sections,
+                writingApproach: dto.writingApproach,
+                privateEnding: dto.privateEnding,
+                centralQuestion: dto.centralQuestion
+            )
+            try outlineRepository.insert(newOutline)
+            for chapter in dto.chapters {
+                try outlineRepository.insert(OutlineChapter(
+                    outlineID: newOutline.id,
+                    number: chapter.number,
+                    title: chapter.title,
+                    summary: chapter.summary,
+                    turn: chapter.turn,
+                    estimatedMinutes: chapter.estimatedMinutes
+                ))
+            }
+            for character in dto.characters {
+                try outlineRepository.insert(OutlineCharacter(
+                    outlineID: newOutline.id,
+                    name: character.name,
+                    role: character.role,
+                    notes: character.notes
+                ))
+            }
+            project.hasOutline = true
+            try projectsRepository.saveChanges()
+            outline = newOutline
+            try reloadSections()
+        } catch {
+            if outline == nil {
+                generateLocally(project)
+            }
+        }
+    }
+
+    private func reloadSections() throws {
+        if let outline {
+            chapters = try outlineRepository.fetchChapters(outlineID: outline.id)
+            characters = try outlineRepository.fetchCharacters(outlineID: outline.id)
         }
     }
 

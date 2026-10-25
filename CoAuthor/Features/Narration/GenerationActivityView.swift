@@ -5,6 +5,8 @@ import SwiftData
 @MainActor
 final class GenerationViewModel {
     private let repository: any GenerationRepository
+    private let projectsRepository: any DashboardRepository
+    private let backendClient: any BackendClient
 
     private(set) var jobs: [GenerationJob] = []
     private(set) var loadError: String?
@@ -13,8 +15,14 @@ final class GenerationViewModel {
     var taskFilter = "All tasks"
     var statusFilter = "All statuses"
 
-    init(repository: any GenerationRepository) {
+    init(
+        repository: any GenerationRepository,
+        projectsRepository: any DashboardRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
+    ) {
         self.repository = repository
+        self.projectsRepository = projectsRepository
+        self.backendClient = backendClient
     }
 
     var projectOptions: [String] {
@@ -41,9 +49,32 @@ final class GenerationViewModel {
     func load() {
         do {
             jobs = try repository.fetchJobs()
+            if jobs.isEmpty && BackendConfiguration.shared.useBackend {
+                Task { await hydrateJobs() }
+            }
             loadError = nil
         } catch {
             loadError = "Couldn't load activity."
+        }
+    }
+
+    /// Backend path — fetches the activity feed from the API when
+    /// the local store is empty (avoids duplicating local jobs).
+    private func hydrateJobs() async {
+        do {
+            let dtos: [BackendDTO.Job] = try await backendClient.get("/v1/jobs")
+            let projects = try projectsRepository.fetchProjects()
+            for dto in dtos {
+                let projectID = projects.first {
+                    $0.title == dto.projectTitle
+                }?.id ?? UUID()
+                try? repository.insert(dto.model(projectID: projectID))
+            }
+            jobs = try repository.fetchJobs()
+        } catch {
+            if jobs.isEmpty {
+                loadError = "Couldn't load activity."
+            }
         }
     }
 
@@ -101,7 +132,8 @@ struct GenerationActivityView: View {
         .task {
             if viewModel == nil {
                 let vm = GenerationViewModel(
-                    repository: SwiftDataGenerationRepository(context: modelContext)
+                    repository: SwiftDataGenerationRepository(context: modelContext),
+                    projectsRepository: SwiftDataDashboardRepository(context: modelContext)
                 )
                 viewModel = vm
                 vm.load()

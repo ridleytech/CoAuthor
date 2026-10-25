@@ -6,6 +6,7 @@ final class IdeasViewModel {
     let projectID: UUID
     private let projectsRepository: any DashboardRepository
     private let ideasRepository: any IdeasRepository
+    private let backendClient: any BackendClient
     private let generator = MockIdeaGenerator()
 
     /// Ideas produced on first open — deterministic, no AI calls.
@@ -18,11 +19,13 @@ final class IdeasViewModel {
     init(
         projectID: UUID,
         projectsRepository: any DashboardRepository,
-        ideasRepository: any IdeasRepository
+        ideasRepository: any IdeasRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.ideasRepository = ideasRepository
+        self.backendClient = backendClient
     }
 
     // MARK: Derived state
@@ -69,16 +72,45 @@ final class IdeasViewModel {
         do {
             project = try projectsRepository.fetchProject(id: projectID)
             ideas = try ideasRepository.fetchIdeas(projectID: projectID)
-            if ideas.isEmpty, let project {
-                for index in 0..<Self.initialGenerationCount {
-                    let idea = generator.generate(for: project, index: index)
-                    try ideasRepository.insert(idea)
-                    ideas.append(idea)
+            if ideas.isEmpty {
+                if BackendConfiguration.shared.useBackend {
+                    Task { await hydrateIdeas() }
+                } else if let project {
+                    generateLocally(project)
                 }
             }
             loadError = nil
         } catch {
             loadError = "Couldn't load ideas."
+        }
+    }
+
+    /// Mock path — deterministic, no AI calls.
+    private func generateLocally(_ project: Project) {
+        for index in 0..<Self.initialGenerationCount {
+            let idea = generator.generate(for: project, index: index)
+            try? ideasRepository.insert(idea)
+            ideas.append(idea)
+        }
+    }
+
+    /// Backend path — fetches ideas from the API, persists them via
+    /// the repository, and falls back to the mock generator when the
+    /// request fails.
+    private func hydrateIdeas() async {
+        guard let project else { return }
+        do {
+            let dtos: [BackendDTO.Idea] = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/ideas")
+            for (index, dto) in dtos.enumerated() {
+                let idea = dto.model(projectID: projectID, sortOrder: index)
+                try? ideasRepository.insert(idea)
+            }
+            ideas = try ideasRepository.fetchIdeas(projectID: projectID)
+        } catch {
+            if ideas.isEmpty {
+                generateLocally(project)
+            }
         }
     }
 

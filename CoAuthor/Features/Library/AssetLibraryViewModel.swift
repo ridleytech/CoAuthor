@@ -8,6 +8,7 @@ final class AssetLibraryViewModel {
     private let publishingRepository: any PublishingRepository
     private let cueRepository: any CueRepository
     private let projectsRepository: any DashboardRepository
+    private let backendClient: any BackendClient
 
     private(set) var assets: [SoundAsset] = []
     private(set) var loadError: String?
@@ -25,11 +26,13 @@ final class AssetLibraryViewModel {
     init(
         publishingRepository: any PublishingRepository,
         cueRepository: any CueRepository,
-        projectsRepository: any DashboardRepository
+        projectsRepository: any DashboardRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.publishingRepository = publishingRepository
         self.cueRepository = cueRepository
         self.projectsRepository = projectsRepository
+        self.backendClient = backendClient
     }
 
     var filteredAssets: [SoundAsset] {
@@ -62,9 +65,12 @@ final class AssetLibraryViewModel {
     func load() {
         do {
             var fetched = try publishingRepository.fetchAssets()
+            if fetched.isEmpty && BackendConfiguration.shared.useBackend {
+                Task { await hydrateAssets() }
+            }
             // Dev stores seeded before M10 have no assets — insert the
             // design's starter set once so the library isn't empty.
-            if fetched.isEmpty {
+            if fetched.isEmpty && !BackendConfiguration.shared.useBackend {
                 for asset in SampleData.makeSoundAssets() {
                     try publishingRepository.insertAsset(asset)
                 }
@@ -92,6 +98,25 @@ final class AssetLibraryViewModel {
             loadError = nil
         } catch {
             loadError = "Couldn't load assets."
+        }
+    }
+
+    /// Backend path — fetches the asset catalog from the API;
+    /// falls back to the local starter set on failure.
+    private func hydrateAssets() async {
+        do {
+            let dtos: [BackendDTO.Asset] = try await backendClient
+                .get("/v1/assets")
+            for dto in dtos {
+                try? publishingRepository.insertAsset(dto.model())
+            }
+            load()
+        } catch {
+            // Fall back to the seeded starter set.
+            for asset in SampleData.makeSoundAssets() {
+                try? publishingRepository.insertAsset(asset)
+            }
+            load()
         }
     }
 

@@ -8,6 +8,7 @@ final class CuesViewModel {
     private let projectsRepository: any DashboardRepository
     private let cueRepository: any CueRepository
     private let scriptRepository: any ScriptRepository
+    private let backendClient: any BackendClient
     private let generator = MockCueGenerator()
 
     private(set) var project: Project?
@@ -26,12 +27,14 @@ final class CuesViewModel {
         projectID: UUID,
         projectsRepository: any DashboardRepository,
         cueRepository: any CueRepository,
-        scriptRepository: any ScriptRepository
+        scriptRepository: any ScriptRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.cueRepository = cueRepository
         self.scriptRepository = scriptRepository
+        self.backendClient = backendClient
     }
 
     // MARK: Derived state
@@ -91,20 +94,53 @@ final class CuesViewModel {
     func load() {
         do {
             project = try projectsRepository.fetchProject(id: projectID)
-            var existing = try cueRepository.fetchCues(projectID: projectID)
+            let existing = try cueRepository.fetchCues(projectID: projectID)
             if existing.isEmpty, let project {
-                let chapters = try scriptRepository.fetchChapters(projectID: projectID)
-                let generated = generator.generate(for: project, chapters: chapters)
-                for cue in generated {
-                    try cueRepository.insert(cue)
+                if BackendConfiguration.shared.useBackend {
+                    Task { await hydrateCues(project) }
+                } else {
+                    generateLocally(project)
                 }
-                existing = generated
+            } else {
+                cues = existing
+                syncProjectCounts()
             }
-            cues = existing
-            syncProjectCounts()
             loadError = nil
         } catch {
             loadError = "Couldn't load sound cues."
+        }
+    }
+
+    /// Mock path — deterministic starter set, no AI calls.
+    private func generateLocally(_ project: Project) {
+        do {
+            let chapters = try scriptRepository.fetchChapters(projectID: projectID)
+            let generated = generator.generate(for: project, chapters: chapters)
+            for cue in generated {
+                try cueRepository.insert(cue)
+            }
+            cues = generated
+            syncProjectCounts()
+        } catch {
+            loadError = "Couldn't load sound cues."
+        }
+    }
+
+    /// Backend path — fetches the cue set from the API; falls back
+    /// to the mock generator on failure.
+    private func hydrateCues(_ project: Project) async {
+        do {
+            let dtos: [BackendDTO.Cue] = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/cues")
+            for dto in dtos {
+                try? cueRepository.insert(dto.model(projectID: projectID))
+            }
+            cues = try cueRepository.fetchCues(projectID: projectID)
+            syncProjectCounts()
+        } catch {
+            if cues.isEmpty {
+                generateLocally(project)
+            }
         }
     }
 

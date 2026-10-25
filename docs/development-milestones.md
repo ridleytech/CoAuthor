@@ -917,21 +917,79 @@ per maintainer request)**
 
 ## M12 — Backend integration
 
-**Status: Not started**
+**Status: Data-path integration implemented (unverified — code-only
+pass, no build/test run). Provider/paid actions remain stubs.**
 
 - Scope: replace mocks with CoAuthor backend services incrementally.
-- Pre-work landed: `backend/` (gitignored local scaffold) is a
-  Node.js AWS Lambda handler with stub routes mirroring the app's
-  mock services (`/health`, `/v1/credits`, generation stubs) plus a
-  `localhost:3100` dev runner.
-- `BackendConfiguration.shared` is the global mock ↔ backend switch
-  (Settings → Developer → "Use backend data", persisted via
-  UserDefaults, `baseURL` configurable). `URLSessionBackendClient`
-  is the transport. `CreditsUsageViewModel` is the first wired
-  seam: it fetches `GET /v1/credits` when backend mode is on and
-  falls back to the illustrative snapshot on failure (the screen
-  badges "Live data · backend" when live figures land). Remaining
-  mocks adopt the same seam in M12.
+
+### Architecture
+
+- `BackendConfiguration.shared` — global mock ↔ backend switch
+  (Settings → Developer → "Use backend data", persisted in
+  UserDefaults; `baseURL` defaults to the local runner).
+- `URLSessionBackendClient` — protocol-based transport
+  (`get<Response: Decodable>`), injected into view models like the
+  repositories.
+- `BackendDTO` — decoding shapes for backend payloads; each DTO
+  maps into a local `@Model` so hydration stays behind repository
+  protocols and the app remains SwiftData-backed in both modes.
+- Seam pattern everywhere: view model checks
+  `BackendConfiguration.shared.useBackend` at the point a mock
+  generator would run → `Task { await hydrate…() }` fetches, maps,
+  and persists via the repository; **any failure falls back to the
+  existing mock path**, so backend mode can't break the app.
+
+### Backend (`backend/` — gitignored local scaffold)
+
+- Node.js Lambda handler (`src/index.mjs`) serving real JSON reads:
+  `GET /v1/projects/{id}/ideas`, `/outline`, `/cues`, `GET /v1/jobs`,
+  `/v1/assets`, `/v1/credits` — deterministic data matching the
+  app's DTOs (verified via direct handler invocation).
+- POST generation endpoints remain `not_implemented` stubs —
+  honest until provider keys exist.
+- `src/local.mjs` dev runner on `localhost:3100`.
+
+### Wired seams (mock → backend with fallback)
+
+- `IdeasViewModel` — first-open generation hydrates from
+  `/v1/projects/{id}/ideas`.
+- `OutlineViewModel` — outline + chapters + characters from
+  `/v1/projects/{id}/outline`.
+- `CuesViewModel` — starter cue set from `/v1/projects/{id}/cues`.
+- `GenerationViewModel` — activity feed hydrates from `/v1/jobs`
+  when the local store is empty (avoids duplicating local jobs;
+  projectID resolved by title).
+- `AssetLibraryViewModel` — catalog from `/v1/assets`, falling back
+  to the seeded starter set.
+- `CreditsUsageViewModel` — balance from `/v1/credits` with a
+  "Live data · backend" badge when live figures land (done in the
+  pre-work commit).
+
+### Deferred within M12
+
+- Real provider calls (OpenAI text, ElevenLabs audio, credit
+  reporting) — POST stubs await keys; all paid-action placeholders
+  in the UI correctly remain placeholders.
+- Voices catalog, document generation, exports packaging,
+  auth/account mutations — still local/mock; next integration pass.
+- Job/asset dedup across repeated hydration (hydrate-when-empty is
+  the current policy).
+- Schema versioning for the accumulated `CoAuthorSchemaV1`
+  additive models before any shipped store.
+
+### Files
+
+- Added: `Backend/BackendDTOs.swift` (+ earlier `BackendClient.swift`,
+  `BackendConfiguration.swift`); `backend/src/index.mjs` data routes
+- Changed: `IdeasViewModel`, `OutlineViewModel`, `CuesViewModel`,
+  `GenerationActivityView` (VM + init), `AssetLibraryViewModel` —
+  backend seam + mock fallback each
+
+### Validation
+
+- Backend routes verified by invoking `handler` directly.
+- Pending: app build, unit tests, simulator run with backend mode
+  toggled on/off.
 
 ## M13 — Final UI and accessibility review
 
