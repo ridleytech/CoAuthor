@@ -355,6 +355,8 @@ final class ExportsViewModel {
     /// The packaged zip written to disk — exposed for a ShareLink
     /// on the exports screen. Nil until a backend export succeeds.
     private(set) var packageFileURL: URL?
+    /// S3-mode package URL — shared when no local file exists.
+    private(set) var packageRemoteURL: URL?
 
     private func postExportJob(project: Project, export: ExportRecord) async {
         struct Payload: Encodable {
@@ -370,8 +372,8 @@ final class ExportsViewModel {
             try? generationRepository.insert(
                 response.job.model(projectID: project.id)
             )
-            // The response carries a real zip — write it beside the
-            // export record so the UI can share it.
+            // The response carries a real zip — inline base64 in
+            // stub mode, an S3 URL when AUDIO_STORAGE=s3.
             if let zipData = response.package?.zipData {
                 let url = FileManager.default.temporaryDirectory
                     .appendingPathComponent(
@@ -381,10 +383,12 @@ final class ExportsViewModel {
                 packageFileURL = url
                 export.sizeLabel =
                     String(format: "%.1f KB", Double(zipData.count) / 1024)
-                export.fileCount = response.package?.fileCount
-                    ?? export.fileCount
-                try? publishingRepository.saveChanges()
             }
+            packageRemoteURL = response.package?.remoteURL
+            if let count = response.package?.fileCount {
+                export.fileCount = count
+            }
+            try? publishingRepository.saveChanges()
         } catch {
             insertLocalJob(project: project)
         }

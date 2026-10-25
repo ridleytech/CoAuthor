@@ -180,9 +180,18 @@ enum BackendDTO {
             var fileCount: Int
             var bytes: Int
             var files: [String]
-            var base64: String
+            /// Inline mode — the zip itself, base64.
+            var base64: String?
+            /// S3 mode — object URL when AUDIO_STORAGE=s3 is
+            /// configured on the backend.
+            var downloadUrl: String?
 
-            var zipData: Data? { Data(base64Encoded: base64) }
+            var zipData: Data? {
+                base64.flatMap { Data(base64Encoded: $0) }
+            }
+            var remoteURL: URL? {
+                downloadUrl.flatMap { URL(string: $0) }
+            }
         }
     }
 

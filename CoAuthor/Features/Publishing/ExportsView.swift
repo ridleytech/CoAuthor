@@ -207,6 +207,16 @@ struct ExportsView: View {
 
     // MARK: Latest export
 
+    private func sharePackageLabel(_ title: String) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+            Image(systemName: "square.and.arrow.up")
+                .font(.caption.weight(.medium))
+        }
+        .foregroundStyle(Color.caInk)
+    }
+
     private func latestExportCard(_ viewModel: ExportsViewModel) -> some View {
         CardContainer {
             VStack(alignment: .leading, spacing: 8) {
@@ -229,17 +239,15 @@ struct ExportsView: View {
                         .foregroundStyle(Color.caSecondary)
                     Divider().overlay(Color.caHairline)
                     if let url = viewModel.packageFileURL {
-                        // Real package — share sheet hands off the zip.
+                        // Local zip — share sheet hands off the file.
                         ShareLink(item: url) {
-                            HStack(spacing: 6) {
-                                Text("Share package")
-                                    .font(.subheadline.weight(.medium))
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.caption.weight(.medium))
-                            }
-                            .foregroundStyle(Color.caInk)
+                            sharePackageLabel("Share package")
                         }
-                        .buttonStyle(.plain)
+                    } else if let url = viewModel.packageRemoteURL {
+                        // S3 package — share sheet hands off the link.
+                        ShareLink(item: url) {
+                            sharePackageLabel("Share package link")
+                        }
                     } else {
                         Button {
                             coordinator.push(.placeholder(

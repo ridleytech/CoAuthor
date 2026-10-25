@@ -1195,3 +1195,18 @@ hydration is idempotent and never clobbers local edits:
 
 - Real identity provider (Cognito/JWT).
 - S3 delivery for export packages (currently inline base64).
+
+## M16a — Packages follow the storage switch
+
+`POST /v1/exports` now honors `AUDIO_STORAGE=s3` — the zip is
+uploaded via the same SigV4-signed PUT as generated audio and the
+response carries `package.downloadUrl` instead of `base64`.
+Verified: inline mode unchanged; s3 mode issues a real signed PUT
+(S3 301 PermanentRedirect on a bogus bucket — the signed request
+reaches AWS). App side: `Package.base64`/`downloadUrl` are both
+optional, `ExportsViewModel` exposes `packageRemoteURL`, and the
+exports card shares the link when no local file exists.
+
+Rationale: packages will outgrow API Gateway's ~10MB response cap
+once narration audio is included; base64 also inflates ~33%.
+Inline stays the default so `npm run local` needs no AWS creds.
