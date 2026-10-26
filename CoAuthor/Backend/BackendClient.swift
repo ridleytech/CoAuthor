@@ -17,9 +17,12 @@ struct URLSessionBackendClient: BackendClient {
     private let baseURL: URL
     private let session: URLSession
 
-    @MainActor
+    /// Nonisolated — the configured base URL is read from
+    /// UserDefaults (`BackendConfiguration.configuredBaseURL`) so
+    /// `URLSessionBackendClient()` works in default arguments and
+    /// other nonisolated contexts.
     init(
-        baseURL: URL = BackendConfiguration.shared.baseURL,
+        baseURL: URL = BackendConfiguration.configuredBaseURL,
         session: URLSession = .shared
     ) {
         self.baseURL = baseURL

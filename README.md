@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="CoAuthor logo" width="250">
+</p>
+
 # CoAuthor
 
 An iOS app for story creation and audiobook preparation — ideation,

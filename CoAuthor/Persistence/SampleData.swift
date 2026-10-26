@@ -32,12 +32,12 @@ enum SampleData {
                 narratorName: "Marlene",
                 scriptRevision: 4,
                 outlineApproved: true,
-                hasOutline: true,
                 scriptChapterCount: 10,
                 narratorConfirmed: true,
                 cuesApproved: 8,
                 cuesTotal: 32,
                 selectedIdeaID: UUID(uuidString: "E5555555-5555-5555-5555-555555555551")!,
+                hasOutline: true,
                 voiceDesignPrompt: "A mature American woman with a warm lower "
                     + "register and lightly textured tone. Subtle Great Lakes "
                     + "vowels, clear consonants, measured pacing. Understated "

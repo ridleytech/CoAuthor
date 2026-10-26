@@ -85,18 +85,19 @@ struct VoiceCreationView: View {
 
     private func headerTitle(_ viewModel: VoiceCreationViewModel) -> String {
         switch viewModel.step {
-        case .describe, .save: "CoAuthor"
+        case .describe, .save:
+            return "CoAuthor"
         case .previews, .assign:
-            viewModel.project?.title ?? "CoAuthor"
+            return viewModel.project?.title ?? "CoAuthor"
         }
     }
 
     private func headerStatus(_ viewModel: VoiceCreationViewModel) -> String {
         if viewModel.finished { return "Assigned" }
         switch viewModel.step {
-        case .describe: "Draft"
-        case .previews, .save: "Not Saved"
-        case .assign: "Saved"
+        case .describe: return "Draft"
+        case .previews, .save: return "Not Saved"
+        case .assign: return "Saved"
         }
     }
 
@@ -530,35 +531,8 @@ struct VoiceCreationView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
-                    Text("\(viewModel.assignedName) is assigned")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(Color.caInk)
-                    Text(viewModel.subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.caSecondary)
-                    stepBar(.assign)
-                    CardContainer {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Label(
-                                viewModel.reusedExisting
-                                    ? "Existing voice reused" : "Voice assigned",
-                                systemImage: "checkmark"
-                            )
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.caInk)
-                            Text(viewModel.reusedExisting
-                                 ? "\(viewModel.assignedName) is confirmed for "
-                                   + "this role and remains the default "
-                                   + "narrator. 0 additional custom voice "
-                                   + "slots consumed."
-                                 : "\(viewModel.assignedName) is confirmed "
-                                   + "for this role. Existing audio files "
-                                   + "are unaffected.")
-                                .font(.subheadline)
-                                .foregroundStyle(Color.caSecondary)
-                        }
-                        .padding(Theme.Spacing.card)
-                    }
+                    successHeader(viewModel)
+                    successCard(viewModel)
                     if viewModel.savedVoice != nil {
                         previewRow(
                             viewModel.auditions[viewModel.selectedAudition],
@@ -566,20 +540,7 @@ struct VoiceCreationView: View {
                         )
                     }
                     VoiceCapacityCard(capacity: viewModel.capacity)
-                    CardContainer {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Capacity is unchanged")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.caInk)
-                            Text("Assignments, favorites and local saved "
-                                 + "references do not create another "
-                                 + "provider voice. Existing audio files "
-                                 + "are unaffected.")
-                                .font(.caption)
-                                .foregroundStyle(Color.caSecondary)
-                        }
-                        .padding(Theme.Spacing.card)
-                    }
+                    capacityNoteCard
                 }
                 .padding(.horizontal, Theme.Spacing.page)
                 .padding(.vertical, Theme.Spacing.cardGap)
@@ -588,10 +549,62 @@ struct VoiceCreationView: View {
                 coordinator.pop()
             }
             secondaryBar("Open existing audio") {
-                if let projectID {
+                if projectID != nil {
                     coordinator.push(.placeholder(title: "Chapter audio", milestone: "M8"))
                 }
             }
+        }
+    }
+
+    private func successHeader(_ viewModel: VoiceCreationViewModel) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(viewModel.assignedName) is assigned")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(Color.caInk)
+            Text(viewModel.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(Color.caSecondary)
+            stepBar(.assign)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func successCard(_ viewModel: VoiceCreationViewModel) -> some View {
+        let title = viewModel.reusedExisting
+            ? "Existing voice reused" : "Voice assigned"
+        let detail = viewModel.reusedExisting
+            ? "\(viewModel.assignedName) is confirmed for this role and "
+              + "remains the default narrator. 0 additional custom voice "
+              + "slots consumed."
+            : "\(viewModel.assignedName) is confirmed for this role. "
+              + "Existing audio files are unaffected."
+        return CardContainer {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(title, systemImage: "checkmark")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.caInk)
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.caSecondary)
+            }
+            .padding(Theme.Spacing.card)
+        }
+    }
+
+    private var capacityNoteCard: some View {
+        CardContainer {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Capacity is unchanged")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.caInk)
+                Text("Assignments, favorites and local saved "
+                     + "references do not create another "
+                     + "provider voice. Existing audio files "
+                     + "are unaffected.")
+                    .font(.caption)
+                    .foregroundStyle(Color.caSecondary)
+            }
+            .padding(Theme.Spacing.card)
         }
     }
 

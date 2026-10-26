@@ -21,11 +21,11 @@
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Nw8-ii-gkj">
-                                <rect key="frame" x="76.666666666666686" y="306" width="240" height="240"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="logo-full-2048" translatesAutoresizingMaskIntoConstraints="NO" id="Nw8-ii-gkj">
+                                <rect key="frame" x="34" y="263.66666666666669" width="325" height="325.00000000000006"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="240" id="fCb-jF-q9s"/>
-                                    <constraint firstAttribute="width" constant="240" id="mZt-Ht-Qrz"/>
+                                    <constraint firstAttribute="height" constant="325" id="fCb-jF-q9s"/>
+                                    <constraint firstAttribute="width" constant="325" id="mZt-Ht-Qrz"/>
                                 </constraints>
                             </imageView>
                         </subviews>
@@ -45,4 +45,7 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="logo-full-2048" width="1254" height="1254"/>
+    </resources>
 </document>

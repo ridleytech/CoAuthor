@@ -291,8 +291,8 @@ final class IdeaHydrationTests: XCTestCase {
             ideasRepository: ideas,
             backendClient: client())
         vm.load()
-        let ok = await waitUntil { vm.ideas.count == 2 }
-        XCTAssertTrue(ok, "backend ideas should hydrate")
+        let hydrated = await waitUntil { vm.ideas.count == 2 }
+        XCTAssertTrue(hydrated, "backend ideas should hydrate")
         XCTAssertEqual(Set(vm.ideas.map(\.title)), ["A", "B"])
     }
 
@@ -303,12 +303,14 @@ final class IdeaHydrationTests: XCTestCase {
             ideasRepository: ideas,
             backendClient: client())
         vm.load()
-        XCTAssertTrue(await waitUntil { vm.ideas.count == 2 })
+        let hydrated = await waitUntil { vm.ideas.count == 2 }
+        XCTAssertTrue(hydrated)
 
         // Simulate the .onAppear race — a second load before/after
         // hydration must not duplicate rows.
         vm.load()
-        XCTAssertTrue(await waitUntil { vm.ideas.count == 2 })
+        let stillTwo = await waitUntil { vm.ideas.count == 2 }
+        XCTAssertTrue(stillTwo)
         try await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertEqual(try ideas.fetchIdeas(projectID: project.id).count, 2)
     }
@@ -342,7 +344,8 @@ final class CreateAccountValidationTests: XCTestCase {
 
     func testValidFormPasses() async {
         let vm = valid()
-        XCTAssertTrue(await vm.submit())
+        let passed = await vm.submit()
+        XCTAssertTrue(passed)
     }
 
     func testInvalidFieldsProduceErrors() async {
@@ -351,7 +354,8 @@ final class CreateAccountValidationTests: XCTestCase {
         vm.email = "not-an-email"
         vm.password = "short"
         vm.acceptedTerms = false
-        XCTAssertFalse(await vm.submit())
+        let passed = await vm.submit()
+        XCTAssertFalse(passed)
         XCTAssertNotNil(vm.nameError)
         XCTAssertNotNil(vm.emailError)
         XCTAssertNotNil(vm.passwordError)
@@ -375,7 +379,8 @@ final class CreateAccountValidationTests: XCTestCase {
         vm.email = "jordan@example.com"
         vm.password = "ValidPassw0rd!"
         vm.acceptedTerms = true
-        XCTAssertFalse(await vm.submit())
+        let passed = await vm.submit()
+        XCTAssertFalse(passed)
         XCTAssertNotNil(vm.serverError)
     }
 }

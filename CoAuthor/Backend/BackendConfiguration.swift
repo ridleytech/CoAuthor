@@ -18,7 +18,17 @@ final class BackendConfiguration {
     static let shared = BackendConfiguration()
 
     private let modeKey = "coauthor.dataSourceMode"
-    private let baseURLKey = "coauthor.backendBaseURL"
+    /// Shared with `URLSessionBackendClient` — static so the
+    /// configured URL can be resolved without the actor.
+    nonisolated static let baseURLKey = "coauthor.backendBaseURL"
+
+    /// Persisted base URL resolved without the actor — lets the
+    /// nonisolated backend client pick up the configured endpoint.
+    nonisolated static var configuredBaseURL: URL {
+        URL(string: UserDefaults.standard
+            .string(forKey: baseURLKey) ?? "")
+            ?? URL(string: "http://localhost:3100")!
+    }
 
     /// Current data source. Defaults to `.mock`.
     var mode: DataSourceMode {
@@ -31,7 +41,8 @@ final class BackendConfiguration {
     /// production, `http://localhost:3100` for the local runner.
     var baseURL: URL {
         didSet {
-            UserDefaults.standard.set(baseURL.absoluteString, forKey: baseURLKey)
+            UserDefaults.standard
+                .set(baseURL.absoluteString, forKey: Self.baseURLKey)
         }
     }
 
@@ -47,7 +58,7 @@ final class BackendConfiguration {
             rawValue: defaults.string(forKey: modeKey) ?? ""
         ) ?? .mock
         baseURL = URL(
-            string: defaults.string(forKey: baseURLKey)
+            string: defaults.string(forKey: Self.baseURLKey)
                 ?? "http://localhost:3100"
         ) ?? URL(string: "http://localhost:3100")!
     }

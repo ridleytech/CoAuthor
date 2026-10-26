@@ -7,7 +7,7 @@ import Foundation
 final class VoicesViewModel {
     /// Casting context — set when picking a narrator for a project.
     let projectID: UUID?
-    private let projectsRepository: any DashboardRepository?
+    private let projectsRepository: (any DashboardRepository)?
     private let voiceRepository: any VoiceRepository
     private let backendClient: any BackendClient
 
@@ -175,7 +175,7 @@ final class VoicesViewModel {
 final class VoiceDetailViewModel {
     let voiceID: UUID
     let projectID: UUID?
-    private let projectsRepository: any DashboardRepository?
+    private let projectsRepository: (any DashboardRepository)?
     private let voiceRepository: any VoiceRepository
     private let backendClient: any BackendClient
 

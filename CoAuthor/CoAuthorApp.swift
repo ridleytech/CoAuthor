@@ -23,7 +23,23 @@ struct CoAuthorApp: App {
                 configurations: [configuration]
             )
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Stores written before schema versioning was introduced
+            // carry no version identifier and can't be matched to a
+            // migration stage — remove them and retry with a fresh store.
+            let url = configuration.url
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(
+                    at: URL(fileURLWithPath: url.path + suffix))
+            }
+            do {
+                container = try ModelContainer(
+                    for: schema,
+                    migrationPlan: CoAuthorMigrationPlan.self,
+                    configurations: [configuration]
+                )
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }
 
