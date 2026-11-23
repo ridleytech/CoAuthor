@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class DashboardViewModel {
     private let repository: any DashboardRepository
+    private let backendClient: any BackendClient
 
     private(set) var projects: [Project] = []
     private(set) var reviewItems: [ReviewItem] = []
@@ -13,8 +14,12 @@ final class DashboardViewModel {
     /// Placeholder until M11 (account) supplies a real profile.
     let welcomeName = "Jordan"
 
-    init(repository: any DashboardRepository) {
+    init(
+        repository: any DashboardRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
+    ) {
         self.repository = repository
+        self.backendClient = backendClient
     }
 
     // MARK: Derived state
@@ -45,9 +50,32 @@ final class DashboardViewModel {
             }
             projects = try repository.fetchProjects()
             reviewItems = try repository.fetchReviewItems()
+            if BackendConfiguration.shared.useBackend {
+                Task { await hydrateProjects() }
+            }
             loadError = nil
         } catch {
             loadError = "Couldn't load projects."
+        }
+    }
+
+    /// Backend path — fetches project cards derived from the story
+    /// data files and inserts any the store doesn't have. Deduped
+    /// by title so repeated loads can't duplicate a project.
+    private func hydrateProjects() async {
+        do {
+            let metas: [BackendDTO.ProjectMeta] = try await backendClient
+                .get("/v1/projects")
+            var titles = Set(
+                try repository.fetchProjects().map(\.title)
+            )
+            for meta in metas where !titles.contains(meta.title) {
+                try repository.insert(meta.model())
+                titles.insert(meta.title)
+            }
+            projects = try repository.fetchProjects()
+        } catch {
+            // Backend unavailable — local projects still render.
         }
     }
 

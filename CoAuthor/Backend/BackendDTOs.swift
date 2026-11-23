@@ -6,6 +6,38 @@ import Foundation
 /// remains SwiftData-backed either way.
 enum BackendDTO {
 
+    // MARK: GET /v1/projects — project card derived from the story
+    // data files (genre/setting/premise from the outline's Story
+    // overview section, runtime from the script front matter).
+
+    struct ProjectMeta: Decodable {
+        var title: String
+        var genre: String
+        var settingDescriptor: String
+        var premise: String
+        var narratorFormat: String
+        var runtimeTargetMinutes: Int
+        var totalChapters: Int
+        var narratedChapters: Int
+        var stageLabel: String
+        var status: String
+
+        func model() -> Project {
+            Project(
+                title: title,
+                genre: genre,
+                settingDescriptor: settingDescriptor,
+                premise: premise,
+                narratorFormat: narratorFormat,
+                runtimeTargetMinutes: runtimeTargetMinutes,
+                totalChapters: totalChapters,
+                narratedChapters: narratedChapters,
+                stageLabel: stageLabel,
+                status: ProjectStatus(rawValue: status) ?? .draft
+            )
+        }
+    }
+
     // MARK: GET /v1/projects/{id}/ideas
 
     struct Idea: Decodable {

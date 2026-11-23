@@ -204,6 +204,25 @@ final class BackendDTOTests: XCTestCase {
         XCTAssertEqual(p.levelConvention, "levels")
     }
 
+    func testProjectMetaDecodesToProject() throws {
+        let json = """
+        [{"title":"What the Church Kept",
+          "genre":"community crime drama and mystery.",
+          "settingDescriptor":"Detroit in November and December 1981.",
+          "premise":"After church treasurer Isaiah Mercer dies…",
+          "narratorFormat":"Single narrator",
+          "runtimeTargetMinutes":65,"totalChapters":10,
+          "narratedChapters":0,"stageLabel":"Ready to produce",
+          "status":"draft"}]
+        """
+        let metas = try JSONDecoder().decode(
+            [BackendDTO.ProjectMeta].self, from: Data(json.utf8))
+        let project = metas[0].model()
+        XCTAssertEqual(project.title, "What the Church Kept")
+        XCTAssertEqual(project.runtimeTargetMinutes, 65)
+        XCTAssertEqual(project.status, .draft)
+    }
+
     func testExportResponsePackageBothModes() throws {
         let inline = """
         {"status":"ready","job":{"projectTitle":"P","kind":"Package export",
