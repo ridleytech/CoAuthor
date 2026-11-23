@@ -108,8 +108,8 @@ final class OutlineViewModel {
             }
             let newOutline = Outline(
                 projectID: projectID,
-                revision: dto.revision,
-                sections: dto.sections,
+                revision: 1,
+                sections: dto.sectionHeadings,
                 writingApproach: dto.writingApproach,
                 privateEnding: dto.privateEnding,
                 centralQuestion: dto.centralQuestion
@@ -118,10 +118,10 @@ final class OutlineViewModel {
             for chapter in dto.chapters {
                 try outlineRepository.insert(OutlineChapter(
                     outlineID: newOutline.id,
-                    number: chapter.number,
-                    title: chapter.title,
+                    number: chapter.chapterNumber,
+                    title: chapter.chapterTitle,
                     summary: chapter.summary,
-                    turn: chapter.turn,
+                    turn: "",
                     estimatedMinutes: chapter.estimatedMinutes
                 ))
             }

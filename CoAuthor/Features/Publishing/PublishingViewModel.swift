@@ -169,6 +169,7 @@ final class PublishingKitViewModel {
     private let projectsRepository: any DashboardRepository
     private let publishingRepository: any PublishingRepository
     private let scriptRepository: any ScriptRepository
+    private let backendClient: any BackendClient
 
     private(set) var project: Project?
     private(set) var kit: PublishingKit?
@@ -182,12 +183,14 @@ final class PublishingKitViewModel {
         projectID: UUID,
         projectsRepository: any DashboardRepository,
         publishingRepository: any PublishingRepository,
-        scriptRepository: any ScriptRepository
+        scriptRepository: any ScriptRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.publishingRepository = publishingRepository
         self.scriptRepository = scriptRepository
+        self.backendClient = backendClient
     }
 
     /// "YouTube preparation · Spoiler-free · Not a publishing action"
@@ -206,6 +209,8 @@ final class PublishingKitViewModel {
             chapters = try scriptRepository.fetchChapters(projectID: projectID)
             if let kit = try publishingRepository.fetchKit(projectID: projectID) {
                 self.kit = kit
+            } else if BackendConfiguration.shared.useBackend {
+                Task { await hydrateKit(project) }
             } else {
                 let kit = Self.makeDefault(for: project)
                 try publishingRepository.insertKit(kit)
@@ -235,6 +240,38 @@ final class PublishingKitViewModel {
     func copy(_ text: String, label: String) {
         UIPasteboard.general.string = text
         copiedLabel = label
+    }
+
+    /// Backend path — hydrates the kit from the story's YouTube
+    /// metadata document (schema_version 5); falls back to the
+    /// locally generated kit on failure.
+    private func hydrateKit(_ project: Project) async {
+        do {
+            let dto: BackendDTO.YouTubeData = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/youtube")
+            // Re-check inside the async gap.
+            if let existing = try publishingRepository.fetchKit(projectID: projectID) {
+                kit = existing
+                return
+            }
+            let newKit = PublishingKit(
+                projectID: projectID,
+                youtubeTitle: dto.youtubeTitle,
+                descriptionText: dto.videoDescription,
+                tagsText: dto.tags.joined(separator: ", "),
+                pinnedComment: dto.pinnedComment,
+                thumbnailTitle: "\(project.title) · Cover",
+                thumbnailDetail: "Story title over cover art."
+            )
+            try publishingRepository.insertKit(newKit)
+            kit = newKit
+        } catch {
+            if kit == nil {
+                let fallback = Self.makeDefault(for: project)
+                try? publishingRepository.insertKit(fallback)
+                kit = fallback
+            }
+        }
     }
 
     private static func makeDefault(for project: Project) -> PublishingKit {

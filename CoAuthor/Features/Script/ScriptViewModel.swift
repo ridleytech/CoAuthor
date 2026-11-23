@@ -9,6 +9,7 @@ final class ScriptViewModel {
     private let projectsRepository: any DashboardRepository
     private let outlineRepository: any OutlineRepository
     private let scriptRepository: any ScriptRepository
+    private let backendClient: any BackendClient
     private let generator = MockScriptGenerator()
 
     private(set) var project: Project?
@@ -19,12 +20,14 @@ final class ScriptViewModel {
         projectID: UUID,
         projectsRepository: any DashboardRepository,
         outlineRepository: any OutlineRepository,
-        scriptRepository: any ScriptRepository
+        scriptRepository: any ScriptRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.outlineRepository = outlineRepository
         self.scriptRepository = scriptRepository
+        self.backendClient = backendClient
     }
 
     var subtitle: String {
@@ -37,7 +40,11 @@ final class ScriptViewModel {
             project = try projectsRepository.fetchProject(id: projectID)
             var existing = try scriptRepository.fetchChapters(projectID: projectID)
             if existing.isEmpty, let project {
-                existing = try generateIfPossible(project)
+                if BackendConfiguration.shared.useBackend {
+                    Task { await hydrateScript(project) }
+                } else {
+                    existing = try generateIfPossible(project)
+                }
             }
             chapters = existing
             loadError = nil
@@ -64,6 +71,43 @@ final class ScriptViewModel {
         project.lastEditedAt = Date()
         try projectsRepository.saveChanges()
         return generated
+    }
+
+    /// Backend path — fetches the full-script document (GPT
+    /// schema_version 5) and hydrates ScriptChapters; falls back to
+    /// the local generator on failure. Deduped by chapter number.
+    private func hydrateScript(_ project: Project) async {
+        do {
+            let dto: BackendDTO.Script = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/script")
+            var numbers = Set(
+                try scriptRepository.fetchChapters(projectID: projectID)
+                    .map(\.number)
+            )
+            for chapter in dto.chapters
+            where !numbers.contains(chapter.chapterNumber) {
+                try scriptRepository.insert(ScriptChapter(
+                    projectID: projectID,
+                    number: chapter.chapterNumber,
+                    title: chapter.chapterTitle,
+                    settingLabel: dto.settingLabel,
+                    body: chapter.paragraphs.joined(separator: "\n\n")
+                ))
+                numbers.insert(chapter.chapterNumber)
+            }
+            if !numbers.isEmpty {
+                project.scriptChapterCount = numbers.count
+                project.stageLabel = "Script ready"
+                project.lastEditedAt = Date()
+                try projectsRepository.saveChanges()
+            }
+            chapters = try scriptRepository.fetchChapters(projectID: projectID)
+        } catch {
+            if chapters.isEmpty,
+               let project = try? projectsRepository.fetchProject(id: projectID) {
+                chapters = (try? generateIfPossible(project)) ?? []
+            }
+        }
     }
 }
 

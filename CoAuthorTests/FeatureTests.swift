@@ -57,17 +57,99 @@ final class BackendDTOTests: XCTestCase {
     }
 
     func testCueDTODecodes() throws {
+        // schema_version 5 envelope — a Silence cue and a Bed cue.
         let json = """
-        [{"number":3,"title":"Silence","chapterTitle":"Ch1",
-          "importance":"Core","category":"Silence",
-          "sourcePassage":"x","generationState":"No audio file needed"}]
+        {"schema_version":"1.0.0","metadata_type":"sound_cues",
+         "cue_count":2,"cues":[
+          {"cue_id":"WCK03","chapter_number":1,
+           "chapter_title":"The Monday Money","sound":"Marked pause",
+           "priority":"Core","treatment":"Silence",
+           "story_passage":"x","generation_complete":"N/A"},
+          {"cue_id":"WCK01","chapter_number":1,
+           "chapter_title":"The Monday Money","sound":"Repast kitchen",
+           "priority":"Core","treatment":"Bed",
+           "story_passage":"p","start_and_placement":"s",
+           "stop_and_fade":"e","sound_to_find_or_generate":"g",
+           "mixing_guidance":"m","generation_complete":"No"}]}
         """
-        let dtos = try JSONDecoder().decode(
-            [BackendDTO.Cue].self, from: Data(json.utf8))
-        let model = dtos[0].model(projectID: UUID())
-        XCTAssertEqual(model.number, 3)
-        XCTAssertTrue(model.isSilence)
-        XCTAssertFalse(model.needsAudio)
+        let set = try JSONDecoder().decode(
+            BackendDTO.CueSet.self, from: Data(json.utf8))
+        XCTAssertEqual(set.cues.count, 2)
+
+        let silence = set.cues[0].model(projectID: UUID())
+        XCTAssertEqual(silence.number, 3)
+        XCTAssertTrue(silence.isSilence)
+        XCTAssertFalse(silence.needsAudio)
+
+        let bed = set.cues[1].model(projectID: UUID())
+        XCTAssertEqual(bed.category, "Ambience")
+        XCTAssertEqual(bed.generationPrompt, "g")
+        XCTAssertEqual(bed.generationState, "Not generated")
+        XCTAssertTrue(bed.placementText.contains("s"))
+    }
+
+    func testOutlineDTODecodesV5Sections() throws {
+        let json = """
+        {"schema_version":"1.0.0","metadata_type":"outline",
+         "story_title":"T",
+         "sections":[
+          {"heading":"Writing approach","level":1,
+           "paragraphs":["Close third person."]},
+          {"heading":"Main characters","level":1,
+           "paragraphs":["Naomi Mercer, 32 — Payroll clerk. Detail."]},
+          {"heading":"Ending and central question","level":1,
+           "paragraphs":["The ending.","Central question: Who pays?"]}],
+         "chapters":[
+          {"chapter_number":1,"chapter_title":"Ch One",
+           "paragraphs":["p1","p2"]}]}
+        """
+        let dto = try JSONDecoder().decode(
+            BackendDTO.Outline.self, from: Data(json.utf8))
+        XCTAssertEqual(dto.writingApproach, "Close third person.")
+        XCTAssertEqual(dto.privateEnding, "The ending.")
+        XCTAssertEqual(dto.centralQuestion, "Who pays?")
+        XCTAssertEqual(dto.characters.first?.name, "Naomi Mercer")
+        XCTAssertEqual(dto.characters.first?.role, "Payroll clerk")
+        XCTAssertEqual(dto.chapters.first?.chapterNumber, 1)
+        XCTAssertEqual(dto.chapters.first?.summary, "p1\n\np2")
+    }
+
+    func testScriptDTODecodesChapters() throws {
+        let json = """
+        {"schema_version":"1.0.0","metadata_type":"full_script",
+         "story_title":"T","front_matter":["Detroit 1981"],
+         "sections":[],
+         "chapters":[
+          {"chapter_number":2,"chapter_title":"Ch Two",
+           "paragraphs":["body"]}]}
+        """
+        let dto = try JSONDecoder().decode(
+            BackendDTO.Script.self, from: Data(json.utf8))
+        XCTAssertEqual(dto.settingLabel, "Detroit 1981")
+        XCTAssertEqual(dto.chapters.first?.chapterNumber, 2)
+    }
+
+    func testVoicePromptsAndYouTubeDecode() throws {
+        let prompts = """
+        {"schema_version":"1.0.0","voices":[
+          {"character_name":"Narrator","role":"Series narrator",
+           "voice_design_prompt":"Warm baritone.",
+           "preview_text":"p","performance_notes":"n",
+           "saved_voice_name":null,"saved_voice_id":null}]}
+        """
+        let yt = """
+        {"schema_version":"1.0.0","youtube_title":"T | Audiobook",
+         "video_description":"d","tags":["a","b"],
+         "pinned_comment":"c"}
+        """
+        let decoder = JSONDecoder()
+        let voices = try decoder.decode(
+            BackendDTO.VoicePrompts.self, from: Data(prompts.utf8))
+        let youtube = try decoder.decode(
+            BackendDTO.YouTubeData.self, from: Data(yt.utf8))
+        XCTAssertEqual(voices.voices.first?.characterName, "Narrator")
+        XCTAssertEqual(voices.voices.first?.role, "Series narrator")
+        XCTAssertEqual(youtube.tags, ["a", "b"])
     }
 
     func testExportResponsePackageBothModes() throws {

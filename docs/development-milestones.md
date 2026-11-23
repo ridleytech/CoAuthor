@@ -1238,3 +1238,55 @@ the test target automatically.
 Pending: `xcodebuild test` / Xcode test run, plus follow-on
 coverage (outline hydration, exports package write, voice sync
 merge).
+
+## M18 — GPT schema_version 5 story data
+
+**Status: Build + tests verified**
+
+The API's story payloads now match the GPT-exported
+`schema_version` JSON files (see `backend/seed/` for a "What the
+Church Kept" template set — drop updated exports there and the
+local backend serves them verbatim).
+
+**Backend** (`backend/src/index.mjs`)
+
+- `GET /v1/projects/{id}/outline` — serves the outline file:
+  `sections` (heading + paragraph lists) and `chapters`
+  (`chapter_number`/`chapter_title`/`paragraphs`).
+- `GET /v1/projects/{id}/script` — new; the full-script file.
+- `GET /v1/projects/{id}/cues` — the sound-cues envelope
+  (`cue_count` + `cues[]` with `cue_id`, `treatment`,
+  `story_passage`, placement/mixing fields).
+- `GET /v1/projects/{id}/voice-prompts` — new; per-story voice
+  designs (character name, role, design prompt, saved voice ids).
+- `GET /v1/projects/{id}/youtube` — new; YouTube upload metadata.
+- Without a seed file each route serves a v5-shaped payload
+  synthesized from the inline stubs, so stub mode keeps the same
+  contract.
+
+**App** (`BackendDTOs.swift` + hydration)
+
+- `BackendDTO.Outline` — decodes sections/chapters; writing
+  approach, ending, central question, and characters are parsed
+  out of the named sections. `BackendDTO.Script` shares the
+  chapter shape; `front_matter[0]` becomes the chapter eyebrow.
+- `BackendDTO.CueSet`/`Cue` — `cue_id` digits → `number`,
+  `treatment` Bed→Ambience/Spot/Silence → `category`,
+  `generation_complete`/`N/A` → `generationState`, placement +
+  fade + mixing guidance → `placementText`,
+  `sound_to_find_or_generate` → `generationPrompt`.
+- `BackendDTO.VoicePrompts` → `CastAssignment`s (deduped by
+  character name) and seeds `project.voiceDesignPrompt`.
+- `BackendDTO.YouTubeData` → `PublishingKit` fields.
+- `ScriptViewModel` gained a backend hydration path (`/script`),
+  `CastingViewModel` hydrates `/voice-prompts`, and
+  `PublishingKitViewModel` hydrates `/youtube` — all behind
+  `BackendConfiguration.useBackend` with mock fallback.
+
+**Tests** — `testCueDTODecodes` rewritten for the v5 envelope
+(plus `testOutlineDTODecodesV5Sections`,
+`testScriptDTODecodesChapters`,
+`testVoicePromptsAndYouTubeDecode`). 24/24 pass.
+
+Not parsed yet (no app feature): chapter thumbnails, YouTube
+shorts + shorts metadata, and the sound-cues panel file.

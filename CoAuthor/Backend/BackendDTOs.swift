@@ -32,54 +32,265 @@ enum BackendDTO {
         }
     }
 
-    // MARK: GET /v1/projects/{id}/outline
+    // MARK: GET /v1/projects/{id}/outline — GPT schema_version 5
+    //
+    // The outline file carries narrative data inside titled
+    // `sections` (paragraph lists) plus a flat `chapters` list.
+    // The app-facing fields (writing approach, ending, central
+    // question, characters) are parsed out of the section text.
 
     struct Outline: Decodable {
-        var revision: Int
-        var sections: [String]
-        var writingApproach: String
-        var privateEnding: String
-        var centralQuestion: String
+        var schemaVersion: String?
+        var storyTitle: String?
+        var sections: [Section]
         var chapters: [Chapter]
-        var characters: [Character]
 
-        struct Chapter: Decodable {
-            var number: Int
-            var title: String
-            var summary: String
-            var turn: String
-            var estimatedMinutes: Int
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case storyTitle = "story_title"
+            case sections, chapters
         }
 
-        struct Character: Decodable {
+        struct Section: Decodable {
+            var heading: String
+            var level: Int?
+            var paragraphs: [String]
+        }
+
+        struct Chapter: Decodable {
+            var chapterNumber: Int
+            var chapterTitle: String
+            var paragraphs: [String]
+
+            enum CodingKeys: String, CodingKey {
+                case chapterNumber = "chapter_number"
+                case chapterTitle = "chapter_title"
+                case paragraphs
+            }
+
+            var summary: String {
+                paragraphs.joined(separator: "\n\n")
+            }
+
+            /// Rough narration estimate (~140 spoken wpm).
+            var estimatedMinutes: Int {
+                let words = paragraphs.joined(separator: " ")
+                    .split(whereSeparator: \.isWhitespace).count
+                return max(1, words / 140)
+            }
+        }
+
+        /// Workspace picker names — the section headings.
+        var sectionHeadings: [String] { sections.map(\.heading) }
+
+        func paragraphs(under heading: String) -> [String] {
+            sections.first { $0.heading == heading }?.paragraphs ?? []
+        }
+
+        var writingApproach: String {
+            paragraphs(under: "Writing approach")
+                .joined(separator: "\n\n")
+        }
+
+        var privateEnding: String {
+            paragraphs(under: "Ending and central question")
+                .first { !$0.hasPrefix("Central question:") } ?? ""
+        }
+
+        var centralQuestion: String {
+            paragraphs(under: "Ending and central question")
+                .first { $0.hasPrefix("Central question:") }
+                .map {
+                    String($0.dropFirst("Central question:".count))
+                        .trimmingCharacters(in: .whitespaces)
+                } ?? ""
+        }
+
+        struct ParsedCharacter {
             var name: String
             var role: String
             var notes: String
         }
+
+        /// "Main characters" paragraphs look like
+        /// "Naomi Mercer, 32 — Payroll clerk and Isaiah's daughter.
+        /// Her ability to follow accounts…". Name is the text before
+        /// the first comma or em-dash; role is the phrase after the
+        /// em-dash up to the first period; the full paragraph is the
+        /// notes.
+        var characters: [ParsedCharacter] {
+            paragraphs(under: "Main characters").map { paragraph in
+                let name = paragraph
+                    .prefix { $0 != "," && $0 != "—" }
+                    .trimmingCharacters(in: .whitespaces)
+                let afterDash = paragraph
+                    .components(separatedBy: "—")
+                    .dropFirst()
+                    .joined(separator: "—")
+                    .trimmingCharacters(in: .whitespaces)
+                let role = afterDash
+                    .components(separatedBy: ".")
+                    .first?
+                    .trimmingCharacters(in: .whitespaces) ?? ""
+                return ParsedCharacter(
+                    name: name.isEmpty ? paragraph : name,
+                    role: role,
+                    notes: paragraph
+                )
+            }
+        }
     }
 
-    // MARK: GET /v1/projects/{id}/cues
+    // MARK: GET /v1/projects/{id}/script — schema_version 5
+    //
+    // The full-script file shares the outline's chapter shape;
+    // `front_matter` lines carry the setting/stats header text.
+
+    struct Script: Decodable {
+        var schemaVersion: String?
+        var storyTitle: String?
+        var frontMatter: [String]
+        var chapters: [Outline.Chapter]
+
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case storyTitle = "story_title"
+            case frontMatter = "front_matter"
+            case chapters
+        }
+
+        /// Reader eyebrow label — e.g. "Detroit November…".
+        var settingLabel: String { frontMatter.first ?? "" }
+    }
+
+    // MARK: GET /v1/projects/{id}/cues — schema_version 5
+    //
+    // The cues file wraps the list in a metadata envelope
+    // (`cue_count`, `chapters`, timing fields) — only `cues` is
+    // decoded into models.
+
+    struct CueSet: Decodable {
+        var cueCount: Int?
+        var cues: [Cue]
+
+        enum CodingKeys: String, CodingKey {
+            case cueCount = "cue_count"
+            case cues
+        }
+    }
 
     struct Cue: Decodable {
-        var number: Int
-        var title: String
+        var cueId: String
+        var chapterNumber: Int
         var chapterTitle: String
-        var importance: String
-        var category: String
-        var sourcePassage: String
-        var generationState: String
+        var sound: String
+        var priority: String
+        var treatment: String
+        var storyPassage: String
+        var startAndPlacement: String?
+        var stopAndFade: String?
+        var soundToFindOrGenerate: String?
+        var mixingGuidance: String?
+        var generationComplete: String?
+
+        enum CodingKeys: String, CodingKey {
+            case cueId = "cue_id"
+            case chapterNumber = "chapter_number"
+            case chapterTitle = "chapter_title"
+            case sound, priority, treatment
+            case storyPassage = "story_passage"
+            case startAndPlacement = "start_and_placement"
+            case stopAndFade = "stop_and_fade"
+            case soundToFindOrGenerate = "sound_to_find_or_generate"
+            case mixingGuidance = "mixing_guidance"
+            case generationComplete = "generation_complete"
+        }
+
+        /// Ordinal parsed from the cue id ("WCK07" → 7).
+        var number: Int {
+            Int(cueId.filter(\.isNumber)) ?? 0
+        }
+
+        /// treatment → the app's category vocabulary:
+        /// "Bed" → "Ambience"; "Spot"/"Silence" pass through.
+        var category: String {
+            treatment == "Bed" ? "Ambience" : treatment
+        }
+
+        var generationState: String {
+            if category == "Silence" || generationComplete == "N/A" {
+                return "No audio file needed"
+            }
+            return generationComplete == "Yes" ? "Ready" : "Not generated"
+        }
+
+        var placementText: String {
+            [startAndPlacement, stopAndFade, mixingGuidance]
+                .compactMap { $0 }
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n\n")
+        }
 
         func model(projectID: UUID) -> SoundCue {
             SoundCue(
                 projectID: projectID,
                 number: number,
-                title: title,
+                title: sound,
                 chapterTitle: chapterTitle,
-                importance: importance,
+                importance: priority,
                 category: category,
-                sourcePassage: sourcePassage,
+                sourcePassage: storyPassage,
+                placementText: placementText,
+                generationPrompt: soundToFindOrGenerate ?? sound,
                 generationState: generationState
             )
+        }
+    }
+
+    // MARK: GET /v1/projects/{id}/voice-prompts — schema_version 5
+    //
+    // Per-story voice designs: each entry is a character/role the
+    // single narrator performs. Maps to CastAssignment locally.
+
+    struct VoicePrompts: Decodable {
+        var voices: [Prompt]
+
+        struct Prompt: Decodable {
+            var characterName: String
+            var role: String
+            var voiceDesignPrompt: String
+            var previewText: String?
+            var performanceNotes: String?
+            var savedVoiceName: String?
+            var savedVoiceId: String?
+
+            enum CodingKeys: String, CodingKey {
+                case characterName = "character_name"
+                case role
+                case voiceDesignPrompt = "voice_design_prompt"
+                case previewText = "preview_text"
+                case performanceNotes = "performance_notes"
+                case savedVoiceName = "saved_voice_name"
+                case savedVoiceId = "saved_voice_id"
+            }
+        }
+    }
+
+    // MARK: GET /v1/projects/{id}/youtube — schema_version 5
+    //
+    // YouTube upload metadata for the publishing kit.
+
+    struct YouTubeData: Decodable {
+        var youtubeTitle: String
+        var videoDescription: String
+        var tags: [String]
+        var pinnedComment: String
+
+        enum CodingKeys: String, CodingKey {
+            case youtubeTitle = "youtube_title"
+            case videoDescription = "video_description"
+            case tags
+            case pinnedComment = "pinned_comment"
         }
     }
 

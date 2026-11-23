@@ -9,6 +9,7 @@ final class CastingViewModel {
     let projectID: UUID
     private let projectsRepository: any DashboardRepository
     private let voiceRepository: any VoiceRepository
+    private let backendClient: any BackendClient
 
     private(set) var project: Project?
     private(set) var assignments: [CastAssignment] = []
@@ -20,11 +21,13 @@ final class CastingViewModel {
     init(
         projectID: UUID,
         projectsRepository: any DashboardRepository,
-        voiceRepository: any VoiceRepository
+        voiceRepository: any VoiceRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
     ) {
         self.projectID = projectID
         self.projectsRepository = projectsRepository
         self.voiceRepository = voiceRepository
+        self.backendClient = backendClient
     }
 
     var subtitle: String {
@@ -71,6 +74,9 @@ final class CastingViewModel {
         do {
             project = try projectsRepository.fetchProject(id: projectID)
             assignments = try voiceRepository.fetchCastAssignments(projectID: projectID)
+            if assignments.isEmpty, BackendConfiguration.shared.useBackend {
+                Task { await hydrateCasting() }
+            }
             // Deterministic suggestion: prefer the project's assigned
             // voice, else the first catalog narrator.
             let voices = try voiceRepository.fetchVoices()
@@ -82,6 +88,38 @@ final class CastingViewModel {
             loadError = nil
         } catch {
             loadError = "Couldn't load casting."
+        }
+    }
+
+    /// Backend path — hydrates cast assignments from the story's
+    /// voice-prompts document (schema_version 5). Deduped by
+    /// character name; also seeds the project's voice design prompt
+    /// from the narrator entry when empty.
+    private func hydrateCasting() async {
+        do {
+            let dto: BackendDTO.VoicePrompts = try await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/voice-prompts")
+            var names = Set(
+                try voiceRepository.fetchCastAssignments(projectID: projectID)
+                    .map(\.characterName)
+            )
+            for prompt in dto.voices where !names.contains(prompt.characterName) {
+                try voiceRepository.insert(CastAssignment(
+                    projectID: projectID,
+                    characterName: prompt.characterName,
+                    roleLabel: prompt.role
+                ))
+                names.insert(prompt.characterName)
+            }
+            if let narrator = dto.voices.first,
+               project?.voiceDesignPrompt.isEmpty == true {
+                project?.voiceDesignPrompt = narrator.voiceDesignPrompt
+            }
+            try? projectsRepository.saveChanges()
+            assignments = try voiceRepository.fetchCastAssignments(projectID: projectID)
+        } catch {
+            // Casting simply has no assignments — the suggestion card
+            // and prompt text still render from local state.
         }
     }
 
