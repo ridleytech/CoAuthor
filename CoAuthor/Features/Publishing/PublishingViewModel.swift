@@ -254,14 +254,22 @@ final class PublishingKitViewModel {
                 kit = existing
                 return
             }
+            // Chapter-thumbnails spec feeds the Selected-thumbnail
+            // card when a spec exists; optional — failure just keeps
+            // the placeholder text.
+            let thumbs: BackendDTO.ChapterThumbnails? = try? await backendClient
+                .get("/v1/projects/\(projectID.uuidString)/thumbnails")
+            let firstThumb = thumbs?.first
             let newKit = PublishingKit(
                 projectID: projectID,
                 youtubeTitle: dto.youtubeTitle,
                 descriptionText: dto.videoDescription,
                 tagsText: dto.tags.joined(separator: ", "),
                 pinnedComment: dto.pinnedComment,
-                thumbnailTitle: "\(project.title) · Cover",
-                thumbnailDetail: "Story title over cover art."
+                thumbnailTitle: firstThumb?.title
+                    ?? "\(project.title) · Cover",
+                thumbnailDetail: firstThumb?.imagePrompt
+                    ?? "Story title over cover art."
             )
             try publishingRepository.insertKit(newKit)
             kit = newKit

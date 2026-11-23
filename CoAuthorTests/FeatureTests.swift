@@ -152,6 +152,58 @@ final class BackendDTOTests: XCTestCase {
         XCTAssertEqual(youtube.tags, ["a", "b"])
     }
 
+    func testThumbnailShortsAndPanelDecode() throws {
+        let thumbs = """
+        {"schema_version":"1.0.0","story_title":"T","chapters":[
+          {"chapter_number":1,"title":"Ch One","audio_file":null,
+           "thumbnails":[
+            {"id":"01A","image_file":"01A.png",
+             "title":"The question","image_prompt":"Church basement.",
+             "order":1}]}]}
+        """
+        let shorts = """
+        {"schema_version":"1.0.0","story_title":"T","chapters":[
+          {"chapter_number":1,"chapter_title":"Ch One",
+           "audio_file":null,"script_text":"body"}],
+         "clips":[{"clip_id":"WCK_S01","title":"Short title",
+           "description":"d","tags":["t"],
+           "estimated_duration_seconds":58}]}
+        """
+        let meta = """
+        {"schema_version":"1.0.0",
+         "recommended_first_three_clip_ids":["WCK_S01"],
+         "clips":[{"clip_id":"WCK_S01",
+           "recommendation_heading":"Short 1 Intrusion",
+           "chapter_number":1,"title":"Short title",
+           "description":"d","tags":["t"],
+           "estimated_duration_seconds":58}]}
+        """
+        let panel = """
+        {"schema_version":"1.0.0",
+         "tracks":{"A1":"Narration (existing)","A2":"Ambience beds"},
+         "level_convention":"levels","pan_convention":"pan",
+         "file_naming":"naming"}
+        """
+        let decoder = JSONDecoder()
+        let t = try decoder.decode(
+            BackendDTO.ChapterThumbnails.self, from: Data(thumbs.utf8))
+        let s = try decoder.decode(
+            BackendDTO.YouTubeShorts.self, from: Data(shorts.utf8))
+        let m = try decoder.decode(
+            BackendDTO.ShortsMetadata.self, from: Data(meta.utf8))
+        let p = try decoder.decode(
+            BackendDTO.CuePanel.self, from: Data(panel.utf8))
+
+        XCTAssertEqual(t.first?.id, "01A")
+        XCTAssertEqual(t.first?.imagePrompt, "Church basement.")
+        XCTAssertEqual(s.chapters.first?.scriptText, "body")
+        XCTAssertEqual(s.clips?.first?.clipId, "WCK_S01")
+        XCTAssertEqual(m.recommendedFirstThreeClipIds, ["WCK_S01"])
+        XCTAssertEqual(m.clips.first?.estimatedDurationSeconds, 58)
+        XCTAssertEqual(p.tracks?["A2"], "Ambience beds")
+        XCTAssertEqual(p.levelConvention, "levels")
+    }
+
     func testExportResponsePackageBothModes() throws {
         let inline = """
         {"status":"ready","job":{"projectTitle":"P","kind":"Package export",

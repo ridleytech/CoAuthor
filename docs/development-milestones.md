@@ -1288,5 +1288,34 @@ local backend serves them verbatim).
 `testScriptDTODecodesChapters`,
 `testVoicePromptsAndYouTubeDecode`). 24/24 pass.
 
-Not parsed yet (no app feature): chapter thumbnails, YouTube
-shorts + shorts metadata, and the sound-cues panel file.
+
+
+## M19 — Remaining story files wired
+
+**Status: Build + tests verified**
+
+The last four unparsed story files are now served and decoded.
+
+**Backend**
+
+- `GET /v1/projects/{id}/thumbnails` — chapter thumbnail specs
+  (image prompts anchored to script text).
+- `GET /v1/projects/{id}/shorts` and `/shorts-metadata` —
+  per-chapter extraction text and the recommended-clip list.
+- `GET /v1/projects/{id}/cue-panel` — mixing tracks and level/pan
+  conventions.
+- Export packages now build from the v5 payloads: `outline.txt`
+  and `sound-cues.csv` regenerated for the new shapes, plus
+  `script.txt`, `youtube.txt`, and every served file under
+  `data/*.json` — the zip is a complete production handoff.
+
+**App**
+
+- `BackendDTO.ChapterThumbnails`, `YouTubeShorts`,
+  `ShortsMetadata`/`ShortClip`, and `CuePanel` decode the files.
+- `PublishingKitViewModel` hydrates the Selected-thumbnail card
+  from the first thumbnail spec (title + image prompt).
+- New `testThumbnailShortsAndPanelDecode` covers all four — 25/25
+  tests pass.
+
+All nine story files are now parsed end to end.

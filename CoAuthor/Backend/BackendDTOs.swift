@@ -294,6 +294,128 @@ enum BackendDTO {
         }
     }
 
+    // MARK: GET /v1/projects/{id}/thumbnails — schema_version 5
+    //
+    // Per-chapter thumbnail specs (image prompts anchored to script
+    // text). The publishing kit surfaces the first thumbnail.
+
+    struct ChapterThumbnails: Decodable {
+        var storyTitle: String?
+        var chapters: [Chapter]
+
+        enum CodingKeys: String, CodingKey {
+            case storyTitle = "story_title"
+            case chapters
+        }
+
+        struct Chapter: Decodable {
+            var chapterNumber: Int
+            var title: String?
+            var thumbnails: [Thumb]
+
+            enum CodingKeys: String, CodingKey {
+                case chapterNumber = "chapter_number"
+                case title
+                case thumbnails
+            }
+        }
+
+        struct Thumb: Decodable {
+            var id: String
+            var title: String
+            var imagePrompt: String?
+            var order: Int?
+
+            enum CodingKeys: String, CodingKey {
+                case id, title, order
+                case imagePrompt = "image_prompt"
+            }
+        }
+
+        /// The first thumbnail across all chapters, in order —
+        /// used for the kit's Selected-thumbnail card.
+        var first: Thumb? {
+            chapters
+                .flatMap(\.thumbnails)
+                .sorted { ($0.order ?? 0) < ($1.order ?? 0) }
+                .first
+        }
+    }
+
+    // MARK: GET /v1/projects/{id}/shorts{,-metadata}
+    //
+    // The shorts file carries per-chapter extraction text plus the
+    // recommended clip list; the metadata file carries upload-ready
+    // clip titles/descriptions/tags.
+
+    struct YouTubeShorts: Decodable {
+        var chapters: [Chapter]
+        var clips: [ShortClip]?
+
+        struct Chapter: Decodable {
+            var chapterNumber: Int
+            var chapterTitle: String?
+            var scriptText: String?
+
+            enum CodingKeys: String, CodingKey {
+                case chapterNumber = "chapter_number"
+                case chapterTitle = "chapter_title"
+                case scriptText = "script_text"
+            }
+        }
+    }
+
+    struct ShortsMetadata: Decodable {
+        var clips: [ShortClip]
+        var recommendedFirstThreeClipIds: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case clips
+            case recommendedFirstThreeClipIds =
+                "recommended_first_three_clip_ids"
+        }
+    }
+
+    struct ShortClip: Decodable {
+        var clipId: String
+        var recommendationHeading: String?
+        var chapterNumber: Int?
+        var title: String
+        var description: String?
+        var tags: [String]
+        var pinnedComment: String?
+        var estimatedDurationSeconds: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case clipId = "clip_id"
+            case recommendationHeading = "recommendation_heading"
+            case chapterNumber = "chapter_number"
+            case title, description, tags
+            case pinnedComment = "pinned_comment"
+            case estimatedDurationSeconds = "estimated_duration_seconds"
+        }
+    }
+
+    // MARK: GET /v1/projects/{id}/cue-panel — schema_version 5
+    //
+    // Production mixing panel: track layout and level/pan
+    // conventions. Decoded for completeness; the raw file also
+    // ships inside export packages.
+
+    struct CuePanel: Decodable {
+        var fileNaming: String?
+        var levelConvention: String?
+        var panConvention: String?
+        var tracks: [String: String]?
+
+        enum CodingKeys: String, CodingKey {
+            case fileNaming = "file_naming"
+            case levelConvention = "level_convention"
+            case panConvention = "pan_convention"
+            case tracks
+        }
+    }
+
     // MARK: GET /v1/jobs
 
     struct Job: Decodable {
