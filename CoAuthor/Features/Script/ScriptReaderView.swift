@@ -136,7 +136,7 @@ struct ScriptReaderView: View {
                 ForEach(paragraphs(of: chapter), id: \.self) { paragraph in
                     Text(paragraph)
                         .font(.caSerif(17))
-                        .lineSpacing(5)
+                        .lineSpacing(8)
                         .foregroundStyle(Color.caInk)
                 }
             }

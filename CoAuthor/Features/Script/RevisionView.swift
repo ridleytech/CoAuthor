@@ -100,7 +100,7 @@ struct RevisionView: View {
                 }
                 Text(chapter.body)
                     .font(.caSerif(16))
-                    .lineSpacing(4)
+                    .lineSpacing(7)
                     .foregroundStyle(Color.caInk)
             }
             .padding(Theme.Spacing.card)
@@ -129,7 +129,7 @@ struct RevisionView: View {
                     set: { viewModel.proposedBody = $0 }
                 ))
                 .font(.caSerif(16))
-                .lineSpacing(4)
+                .lineSpacing(7)
                 .scrollContentBackground(.hidden)
                 .foregroundStyle(Color.caInk)
                 .frame(minHeight: 140)

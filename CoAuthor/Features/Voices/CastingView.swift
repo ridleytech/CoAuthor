@@ -9,12 +9,15 @@ struct CastingView: View {
     @Environment(\.modelContext) private var modelContext
 
     let projectID: UUID
+    var chromeHidden = false
     @State private var viewModel: CastingViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            BackTopBar(title: viewModel?.project?.title ?? "Voices") {
-                coordinator.pop()
+            if !chromeHidden {
+                BackTopBar(title: viewModel?.project?.title ?? "Voices") {
+                    coordinator.pop()
+                }
             }
             Group {
                 if let viewModel, let project = viewModel.project {
@@ -49,14 +52,16 @@ struct CastingView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: CastingViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(
-                projectID: project.id,
-                active: .audio,
-                storyDestination: project.hasOutline
-                    ? .outline(projectID: project.id) : nil,
-                audioDestination: project.narratorConfirmed
-                    ? .narrationStudio(projectID: project.id) : nil
-            )
+            if !chromeHidden {
+                ProjectSectionTabs(
+                    projectID: project.id,
+                    active: .audio,
+                    storyDestination: project.hasOutline
+                        ? .outline(projectID: project.id) : nil,
+                    audioDestination: project.narratorConfirmed
+                        ? .narrationStudio(projectID: project.id) : nil
+                )
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                     VStack(alignment: .leading, spacing: 4) {

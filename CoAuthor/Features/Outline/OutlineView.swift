@@ -9,12 +9,15 @@ struct OutlineView: View {
     @Environment(\.modelContext) private var modelContext
 
     let projectID: UUID
+    var chromeHidden = false
     @State private var viewModel: OutlineViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            BackTopBar(title: viewModel?.project?.title ?? "Outline") {
-                coordinator.pop()
+            if !chromeHidden {
+                BackTopBar(title: viewModel?.project?.title ?? "Outline") {
+                    coordinator.pop()
+                }
             }
             Group {
                 if let viewModel, let project = viewModel.project {
@@ -49,13 +52,15 @@ struct OutlineView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: OutlineViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(
-                projectID: project.id,
-                active: .story,
-                storyDestination: .outline(projectID: project.id),
-                audioDestination: project.narratorConfirmed
-                    ? .narrationStudio(projectID: project.id) : nil
-            )
+            if !chromeHidden {
+                ProjectSectionTabs(
+                    projectID: project.id,
+                    active: .story,
+                    storyDestination: .outline(projectID: project.id),
+                    audioDestination: project.narratorConfirmed
+                        ? .narrationStudio(projectID: project.id) : nil
+                )
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
@@ -149,6 +154,7 @@ struct OutlineView: View {
                         .foregroundStyle(Color.caInk)
                     Text(chapter.summary)
                         .font(.subheadline)
+                        .lineSpacing(5)
                         .foregroundStyle(Color.caSecondary)
                     if !chapter.turn.isEmpty {
                         Text("Turn: \(chapter.turn)")

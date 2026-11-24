@@ -242,7 +242,7 @@ struct DocumentPreviewView: View {
                         Text(paragraph)
                             .font(.caSerif(15))
                             .foregroundStyle(Color.caInk)
-                            .lineSpacing(4)
+                            .lineSpacing(7)
                     }
                 }
                 Divider().overlay(Color.caHairline)

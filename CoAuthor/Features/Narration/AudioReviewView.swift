@@ -175,7 +175,7 @@ struct AudioReviewView: View {
                 }
                 Text(viewModelSourceExcerpt(chapter))
                     .font(.caSerif(15))
-                    .lineSpacing(3)
+                    .lineSpacing(6)
                     .foregroundStyle(Color.caSecondary)
                 Button {
                     coordinator.push(.placeholder(title: "Performance correction", milestone: "M12"))

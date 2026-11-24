@@ -75,7 +75,9 @@ struct RootView: View {
     private func destination(_ route: AppRoute) -> some View {
         switch route {
         case .projectDetail(let id):
-            ProjectOverviewView(projectID: id)
+            ProjectWorkspaceView(projectID: id)
+        case .projectWorkspace(let projectID, let section):
+            ProjectWorkspaceView(projectID: projectID, initialSection: section)
         case .newProject:
             NewProjectView()
         case .ideaGeneration(let projectID):

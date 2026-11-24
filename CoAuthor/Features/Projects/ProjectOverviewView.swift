@@ -8,12 +8,15 @@ struct ProjectOverviewView: View {
     @Environment(\.modelContext) private var modelContext
 
     let projectID: UUID
+    var chromeHidden = false
     @State private var viewModel: ProjectOverviewViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            BackTopBar(title: viewModel?.project?.title ?? "Project") {
-                coordinator.pop()
+            if !chromeHidden {
+                BackTopBar(title: viewModel?.project?.title ?? "Project") {
+                    coordinator.pop()
+                }
             }
             Group {
                 if let viewModel, let project = viewModel.project {
@@ -47,15 +50,17 @@ struct ProjectOverviewView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: ProjectOverviewViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(
-                projectID: project.id,
-                active: .overview,
-                storyDestination: project.hasOutline
-                    ? .outline(projectID: project.id)
-                    : .ideaGeneration(projectID: project.id),
-                audioDestination: project.narratorConfirmed
-                    ? .narrationStudio(projectID: project.id) : nil
-            )
+            if !chromeHidden {
+                ProjectSectionTabs(
+                    projectID: project.id,
+                    active: .overview,
+                    storyDestination: project.hasOutline
+                        ? .outline(projectID: project.id)
+                        : .ideaGeneration(projectID: project.id),
+                    audioDestination: project.narratorConfirmed
+                        ? .narrationStudio(projectID: project.id) : nil
+                )
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
@@ -107,6 +112,7 @@ struct ProjectOverviewView: View {
                 SectionLabel("Your story")
                 Text(project.premise)
                     .font(.body)
+                    .lineSpacing(6)
                 if !viewModel.storyMeta.isEmpty {
                     Text(viewModel.storyMeta)
                         .font(.subheadline)

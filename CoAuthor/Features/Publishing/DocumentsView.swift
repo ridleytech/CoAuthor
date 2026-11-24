@@ -9,12 +9,15 @@ struct DocumentsView: View {
     @Environment(\.modelContext) private var modelContext
 
     let projectID: UUID
+    var chromeHidden = false
     @State private var viewModel: DocumentsViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            BackTopBar(title: viewModel?.project?.title ?? "Documents") {
-                coordinator.pop()
+            if !chromeHidden {
+                BackTopBar(title: viewModel?.project?.title ?? "Documents") {
+                    coordinator.pop()
+                }
             }
             Group {
                 if let viewModel, let project = viewModel.project {
@@ -52,14 +55,16 @@ struct DocumentsView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: DocumentsViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(
-                projectID: project.id,
-                active: .publish,
-                storyDestination: project.hasOutline
-                    ? .outline(projectID: project.id) : nil,
-                audioDestination: project.narratorConfirmed
-                    ? .narrationStudio(projectID: project.id) : nil
-            )
+            if !chromeHidden {
+                ProjectSectionTabs(
+                    projectID: project.id,
+                    active: .publish,
+                    storyDestination: project.hasOutline
+                        ? .outline(projectID: project.id) : nil,
+                    audioDestination: project.narratorConfirmed
+                        ? .narrationStudio(projectID: project.id) : nil
+                )
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                     VStack(alignment: .leading, spacing: 4) {

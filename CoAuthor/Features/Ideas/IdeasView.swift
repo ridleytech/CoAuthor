@@ -8,12 +8,15 @@ struct IdeasView: View {
     @Environment(\.modelContext) private var modelContext
 
     let projectID: UUID
+    var chromeHidden = false
     @State private var viewModel: IdeasViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            BackTopBar(title: viewModel?.project?.title ?? "Ideas") {
-                coordinator.pop()
+            if !chromeHidden {
+                BackTopBar(title: viewModel?.project?.title ?? "Ideas") {
+                    coordinator.pop()
+                }
             }
             Group {
                 if let viewModel, let project = viewModel.project {
@@ -48,15 +51,17 @@ struct IdeasView: View {
     @ViewBuilder
     private func content(_ project: Project, _ viewModel: IdeasViewModel) -> some View {
         VStack(spacing: 0) {
-            ProjectSectionTabs(
-                projectID: project.id,
-                active: .story,
-                storyDestination: project.hasOutline
-                    ? .outline(projectID: project.id)
-                    : .ideaGeneration(projectID: project.id),
-                audioDestination: project.narratorConfirmed
-                    ? .narrationStudio(projectID: project.id) : nil
-            )
+            if !chromeHidden {
+                ProjectSectionTabs(
+                    projectID: project.id,
+                    active: .story,
+                    storyDestination: project.hasOutline
+                        ? .outline(projectID: project.id)
+                        : .ideaGeneration(projectID: project.id),
+                    audioDestination: project.narratorConfirmed
+                        ? .narrationStudio(projectID: project.id) : nil
+                )
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {

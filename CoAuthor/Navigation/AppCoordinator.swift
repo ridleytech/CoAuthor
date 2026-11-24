@@ -31,6 +31,10 @@ enum AppTab: Hashable, CaseIterable {
 /// model objects so paths stay serializable later.
 enum AppRoute: Hashable, Identifiable {
     case projectDetail(UUID)
+    /// The project workspace opened on a specific section — used by
+    /// the section strip on detail screens so section switches land
+    /// on the static-chrome container.
+    case projectWorkspace(projectID: UUID, section: ProjectSection)
     case newProject
     case ideaGeneration(projectID: UUID)
     case ideaComparison(projectID: UUID)
@@ -95,6 +99,22 @@ final class AppCoordinator {
         guard var path = paths[selectedTab], !path.isEmpty else { return }
         path.removeLast()
         paths[selectedTab] = path
+    }
+
+    /// Section-tab navigation inside a project workspace. Replaces
+    /// the whole stack with just the destination section so the
+    /// strip behaves like tabs — switching sections never
+    /// accumulates pushes and Back always returns to the
+    /// dashboard. Instant (no slide animation) so the shared
+    /// chrome — back bar and section strip — stays static.
+    func switchSection(_ route: AppRoute) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            var path = NavigationPath()
+            path.append(route)
+            paths[selectedTab] = path
+        }
     }
 
     func presentSheet(_ route: AppRoute) {
