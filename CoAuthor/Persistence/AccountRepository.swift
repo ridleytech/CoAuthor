@@ -64,6 +64,8 @@ struct CreditsSnapshot {
         var provider: String?
         var remaining: Int
         var limit: Int
+        var tier: String?
+        var nextResetUnix: TimeInterval?
         var illustrative: Bool?
     }
 
@@ -72,7 +74,43 @@ struct CreditsSnapshot {
         var copy = self
         copy.remaining = response.remaining
         copy.limit = response.limit
+        if let tier = response.tier {
+            copy.planLabel = tier.capitalized
+        }
+        if let unix = response.nextResetUnix {
+            let date = Date(timeIntervalSince1970: unix)
+            copy.resetLabel = "Resets "
+                + date.formatted(.dateTime.month(.wide).day())
+        }
+        if response.illustrative != true {
+            copy.accountName = "ElevenLabs account"
+            copy.lastRefresh = "Just now"
+        }
         copy.isLive = true
+        return copy
+    }
+
+    /// Copy with real subscription figures from GET /v1/account —
+    /// used by the provider connection screen alongside /v1/credits.
+    func applying(_ account: BackendDTO.ProviderAccount) -> CreditsSnapshot {
+        var copy = self
+        if let remaining = account.remaining,
+           let limit = account.characterLimit {
+            copy.remaining = remaining
+            copy.limit = limit
+        }
+        if let tier = account.tier {
+            copy.planLabel = tier.capitalized
+        }
+        if let label = account.resetLabel {
+            copy.resetLabel = label
+        }
+        if account.live == true {
+            copy.connected = true
+            copy.accountName = "ElevenLabs account"
+            copy.lastRefresh = "Just now"
+            copy.isLive = true
+        }
         return copy
     }
 

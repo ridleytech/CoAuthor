@@ -97,7 +97,13 @@ struct RootView: View {
         case .chapterRevision(let chapterID):
             RevisionView(chapterID: chapterID)
         case .savedVoices(let projectID):
-            SavedVoicesView(projectID: projectID)
+            if projectID == nil {
+                // Standalone Saved Voices is the library workspace —
+                // one bar + strip, tabs swap content underneath.
+                LibraryWorkspaceView(initialSection: "voices")
+            } else {
+                SavedVoicesView(projectID: projectID)
+            }
         case .voiceDetail(let voiceID, let projectID):
             VoiceDetailView(voiceID: voiceID, projectID: projectID)
         case .voiceEdit(let voiceID):
@@ -123,7 +129,7 @@ struct RootView: View {
         case .exports(let projectID):
             ExportsView(projectID: projectID)
         case .assetLibrary:
-            AssetLibraryView()
+            LibraryWorkspaceView(initialSection: "sounds")
         case .manageAccount:
             ManageAccountView()
         case .creditsUsage:

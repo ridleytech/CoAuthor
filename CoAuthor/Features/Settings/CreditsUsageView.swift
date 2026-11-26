@@ -113,12 +113,12 @@ struct CreditsUsageView: View {
                 Text("Last successful refresh: \(credits.lastRefresh)")
                     .font(.caption)
                     .foregroundStyle(Color.caSecondary)
-                Button("Refresh") {
-                    coordinator.push(.placeholder(
-                        title: "Credit refresh", milestone: "M12"
-                    ))
+                Button(viewModel.isRefreshing
+                       ? "Refreshing…" : "Refresh") {
+                    viewModel.refresh()
                 }
                 .buttonStyle(CASecondaryButtonStyle(fullWidth: true))
+                .disabled(viewModel.isRefreshing)
             }
             .padding(Theme.Spacing.card)
         }
@@ -148,17 +148,20 @@ struct CreditsUsageView: View {
     }
 
     private func breakdownCard(_ viewModel: CreditsUsageViewModel) -> some View {
-        CardContainer {
+        let live = viewModel.credits.isLive
+        return CardContainer {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Example usage breakdown")
+                Text(live ? "Account usage" : "Example usage breakdown")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.caInk)
-                Text("Illustrative provider activity · not fetched "
-                     + "account data")
+                Text(live
+                     ? "Live subscription data · ElevenLabs"
+                     : "Illustrative provider activity · not fetched "
+                        + "account data")
                     .font(.caption)
                     .foregroundStyle(Color.caSecondary)
                 ForEach(
-                    Array(viewModel.credits.breakdown.enumerated()),
+                    Array(viewModel.breakdownRows.enumerated()),
                     id: \.offset
                 ) { pair in
                     Divider().overlay(Color.caHairline)
@@ -167,7 +170,7 @@ struct CreditsUsageView: View {
                             .font(.subheadline)
                             .foregroundStyle(Color.caInk)
                         Spacer()
-                        Text("\(format(pair.element.1)) credits")
+                        Text(pair.element.1)
                             .font(.subheadline)
                             .foregroundStyle(Color.caSecondary)
                     }

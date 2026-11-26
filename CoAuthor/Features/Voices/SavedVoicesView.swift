@@ -10,15 +10,20 @@ struct SavedVoicesView: View {
 
     /// Casting context — nil when browsing from the Library tab.
     let projectID: UUID?
+    /// True inside `LibraryWorkspaceView` — the workspace owns the
+    /// brand bar and section strip, so this view renders content only.
+    var chromeHidden = false
     @State private var viewModel: VoicesViewModel?
 
     var body: some View {
         VStack(spacing: 0) {
-            if projectID == nil {
-                BrandTopBar()
-            } else {
-                BackTopBar(title: "CoAuthor") {
-                    coordinator.pop()
+            if !chromeHidden {
+                if projectID == nil {
+                    BrandTopBar()
+                } else {
+                    BackTopBar(title: "CoAuthor") {
+                        coordinator.pop()
+                    }
                 }
             }
             Group {
@@ -56,8 +61,8 @@ struct SavedVoicesView: View {
     @ViewBuilder
     private func content(_ viewModel: VoicesViewModel) -> some View {
         VStack(spacing: 0) {
-            if projectID == nil {
-                LibrarySectionTabs(active: "voices")
+            if projectID == nil && !chromeHidden {
+                LibrarySectionTabs(active: "voices", selection: nil)
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
@@ -75,11 +80,17 @@ struct SavedVoicesView: View {
                         set: { viewModel.searchText = $0 }
                     ))
                     Button {
-                        coordinator.push(.placeholder(title: "Voice sync", milestone: "M12"))
+                        viewModel.syncVoices()
                     } label: {
                         Text("Sync ElevenLabs voices")
                     }
                     .buttonStyle(CAPrimaryButtonStyle(fullWidth: true))
+                    if let note = viewModel.syncNote {
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(Color.caSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     filterRow(viewModel)
                     Text(viewModel.countLine)
                         .font(.caption)
@@ -100,15 +111,30 @@ struct SavedVoicesView: View {
             if let auditioning = viewModel.auditioningVoice {
                 VoiceAuditionStrip(
                     title: "\(auditioning.name) · audition",
-                    position: "00:08",
-                    duration: auditioning.sampleSeconds > 0
-                        ? ScriptReaderViewModel.format(auditioning.sampleSeconds) : "0:00",
-                    isPlaying: false
+                    position: ScriptReaderViewModel.format(
+                        Int(viewModel.previewPlayer.position)),
+                    duration: viewModel.previewPlayer.duration > 0
+                        ? ScriptReaderViewModel.format(
+                            Int(viewModel.previewPlayer.duration))
+                        : "0:00",
+                    isPlaying: viewModel.previewPlayer.isPlaying
                 ) {
-                    viewModel.audition(auditioning)
+                    viewModel.togglePreview()
                 }
                 .padding(.horizontal, Theme.Spacing.page)
                 .padding(.bottom, 6)
+                if viewModel.previewPlayer.isLoading {
+                    Text("Generating preview…")
+                        .font(.caption)
+                        .foregroundStyle(Color.caSecondary)
+                        .padding(.horizontal, Theme.Spacing.page)
+                }
+                if let error = viewModel.previewPlayer.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(Color.caSecondary)
+                        .padding(.horizontal, Theme.Spacing.page)
+                }
             }
             if projectID != nil {
                 BottomCTA(
@@ -256,11 +282,14 @@ struct SavedVoicesView: View {
             Text(voice.summary)
                 .font(.subheadline)
                 .foregroundStyle(Color.caSecondary)
-            HStack(spacing: 6) {
-                ForEach(voice.tags, id: \.self) { tag in
-                    VoiceTagPill(tag)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(voice.tags, id: \.self) { tag in
+                        VoiceTagPill(tag)
+                    }
                 }
             }
+            .padding([.vertical, .bottom], 5)
             if isContextVoice {
                 Text("Used in: \(voice.assignmentLabel)")
                     .font(.caption)

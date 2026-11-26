@@ -31,6 +31,11 @@ struct CoAuthorApp: App {
                 try? FileManager.default.removeItem(
                     at: URL(fileURLWithPath: url.path + suffix))
             }
+            // The seed flag outlives the store — without resetting
+            // it the fresh store never gets sample data and the app
+            // comes up empty.
+            UserDefaults.standard.removeObject(
+                forKey: SwiftDataDashboardRepository.seededKey)
             do {
                 container = try ModelContainer(
                     for: schema,

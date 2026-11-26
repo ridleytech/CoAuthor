@@ -5,8 +5,11 @@ import SwiftData
 /// Sound Effects — matching the Asset-library reference's top tabs.
 struct LibrarySectionTabs: View {
     @Environment(AppCoordinator.self) private var coordinator
-    /// "voices" or "sounds".
+    /// "voices", "narration", or "sounds".
     let active: String
+    /// When set, taps write the binding (the workspace swaps content
+    /// in place); when nil they navigate — used outside the workspace.
+    var selection: Binding<String>?
 
     var body: some View {
         HStack(spacing: 24) {
@@ -28,16 +31,20 @@ struct LibrarySectionTabs: View {
                 .foregroundStyle(Color.caInk)
         } else {
             Button {
-                switch key {
-                case "voices":
-                    coordinator.push(.savedVoices(projectID: nil))
-                case "sounds":
-                    coordinator.push(.assetLibrary)
-                default:
-                    coordinator.push(.placeholder(
-                        title: "Narration assets",
-                        milestone: "M12"
-                    ))
+                if let selection {
+                    selection.wrappedValue = key
+                } else {
+                    switch key {
+                    case "voices":
+                        coordinator.switchSection(.savedVoices(projectID: nil))
+                    case "sounds":
+                        coordinator.switchSection(.assetLibrary)
+                    default:
+                        coordinator.switchSection(.placeholder(
+                            title: "Narration assets",
+                            milestone: "M12"
+                        ))
+                    }
                 }
             } label: {
                 Text(title)
@@ -46,6 +53,43 @@ struct LibrarySectionTabs: View {
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+/// Library workspace — owns the brand bar and section strip once
+/// and swaps Voices / Narration / Sound Effects content underneath,
+/// so switching sections never remounts the chrome.
+struct LibraryWorkspaceView: View {
+    /// "voices", "narration", or "sounds" — set at construction so
+    /// popping back from a detail screen keeps the section.
+    let initialSection: String
+    @State private var section: String
+
+    init(initialSection: String = "voices") {
+        self.initialSection = initialSection
+        _section = State(initialValue: initialSection)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            BrandTopBar()
+            LibrarySectionTabs(active: section, selection: $section)
+            Group {
+                switch section {
+                case "sounds":
+                    AssetLibraryView(chromeHidden: true)
+                case "narration":
+                    DevelopmentPlaceholderView(
+                        title: "Narration assets",
+                        milestone: "M12"
+                    )
+                default:
+                    SavedVoicesView(projectID: nil, chromeHidden: true)
+                }
+            }
+        }
+        .background(Color.caBackground)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 
@@ -58,9 +102,15 @@ struct AssetLibraryView: View {
 
     @State private var viewModel: AssetLibraryViewModel?
 
+    /// True inside `LibraryWorkspaceView` — the workspace owns the
+    /// brand bar and section strip, so this view renders content only.
+    var chromeHidden = false
+
     var body: some View {
         VStack(spacing: 0) {
-            BrandTopBar()
+            if !chromeHidden {
+                BrandTopBar()
+            }
             Group {
                 if let viewModel {
                     content(viewModel)
@@ -94,7 +144,9 @@ struct AssetLibraryView: View {
     @ViewBuilder
     private func content(_ viewModel: AssetLibraryViewModel) -> some View {
         VStack(spacing: 0) {
-            LibrarySectionTabs(active: "sounds")
+            if !chromeHidden {
+                LibrarySectionTabs(active: "sounds", selection: nil)
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                     searchRow(viewModel)

@@ -26,6 +26,13 @@ final class VoicesViewModel {
     /// The voice whose audition is loaded in the bottom player.
     private(set) var auditioningVoice: Voice?
 
+    /// Shared TTS preview player — fetch + play + session cache.
+    let previewPlayer: AudioPreviewPlayer
+
+    /// Result note shown after "Sync ElevenLabs voices".
+    private(set) var syncNote: String?
+    private(set) var lastSync: Date?
+
     enum RoleFilter: String, CaseIterable {
         case all = "All roles", narrator = "Narrator",
              character = "Character"
@@ -70,6 +77,7 @@ final class VoicesViewModel {
         self.projectsRepository = projectsRepository
         self.voiceRepository = voiceRepository
         self.backendClient = backendClient
+        previewPlayer = AudioPreviewPlayer(backendClient: backendClient)
     }
 
     var subtitle: String {
@@ -79,10 +87,13 @@ final class VoicesViewModel {
         return "All account voices"
     }
 
-    /// "Showing 7 of 10 account voices · Synced Today, 9:18 AM"
+    /// "Showing 7 of 10 account voices · Synced 9:18 AM"
     var countLine: String {
-        "Showing \(filteredVoices.count) of \(voices.count) account voices"
-            + " · Synced Today, 9:18 AM"
+        let synced = lastSync.map {
+            "Synced \($0.formatted(date: .omitted, time: .shortened))"
+        } ?? "Not synced yet"
+        return "Showing \(filteredVoices.count) of \(voices.count) "
+            + "account voices · \(synced)"
     }
 
     var filteredVoices: [Voice] {
@@ -147,6 +158,41 @@ final class VoicesViewModel {
         }
     }
 
+    /// "Sync ElevenLabs voices" — POSTs /v1/voices:sync, which the
+    /// backend resolves against the real account library whenever
+    /// a provider key is in play. Merges by name so locally-created
+    /// voices, labels, and favorites are preserved.
+    func syncVoices() {
+        guard BackendConfiguration.shared.useBackend else {
+            syncNote = "Backend mode is off — turn it on in "
+                + "Settings → Developer to sync."
+            return
+        }
+        Task {
+            do {
+                let response: BackendDTO.VoiceSyncResponse =
+                    try await backendClient.post(
+                        "/v1/voices:sync", body: EmptyBody())
+                var names = Set(
+                    try voiceRepository.fetchVoices().map(\.name)
+                )
+                var added = 0
+                for dto in response.voices
+                where !names.contains(dto.name) {
+                    try? voiceRepository.insert(dto.model())
+                    names.insert(dto.name)
+                    added += 1
+                }
+                voices = try voiceRepository.fetchVoices()
+                lastSync = Date()
+                syncNote = "Synced \(response.voices.count) voices "
+                    + "(\(added) new)."
+            } catch {
+                syncNote = "Sync failed — backend unreachable."
+            }
+        }
+    }
+
     func toggleFavorite(_ voice: Voice) {
         voice.isFavorite.toggle()
         try? voiceRepository.saveChanges()
@@ -154,6 +200,12 @@ final class VoicesViewModel {
 
     func audition(_ voice: Voice) {
         auditioningVoice = voice
+        previewPlayer.toggle(voice: voice)
+    }
+
+    /// Strip play/pause — toggles the loaded clip.
+    func togglePreview() {
+        previewPlayer.togglePlayback()
     }
 
     /// "Use this voice" — assigns the voice as the project's narrator.
@@ -168,6 +220,9 @@ final class VoicesViewModel {
         try? voiceRepository.saveChanges()
     }
 }
+
+/// Empty JSON object for POSTs that take no payload.
+private struct EmptyBody: Encodable {}
 
 /// Backs a single voice's detail / casting-picker screen.
 @Observable
@@ -184,7 +239,8 @@ final class VoiceDetailViewModel {
     private(set) var loadError: String?
     let capacity = MockVoiceCapacity.current
 
-    var isPlaying = false
+    /// Shared TTS preview player — fetch + play + session cache.
+    let previewPlayer: AudioPreviewPlayer
 
     init(
         voiceID: UUID,
@@ -198,6 +254,7 @@ final class VoiceDetailViewModel {
         self.projectsRepository = projectsRepository
         self.voiceRepository = voiceRepository
         self.backendClient = backendClient
+        previewPlayer = AudioPreviewPlayer(backendClient: backendClient)
     }
 
     var subtitle: String {
@@ -231,9 +288,14 @@ final class VoiceDetailViewModel {
         try? voiceRepository.saveChanges()
     }
 
+    /// Detail-screen play/pause — first tap fetches the TTS
+    /// preview, later taps pause/resume the loaded clip.
     func togglePlayback() {
-        isPlaying.toggle()
+        guard let voice else { return }
+        previewPlayer.toggle(voice: voice)
     }
+
+    var isPlaying: Bool { previewPlayer.isPlaying }
 
     /// "Use this voice — {project}" — assigns the narrator and persists.
     func useThisVoice() {

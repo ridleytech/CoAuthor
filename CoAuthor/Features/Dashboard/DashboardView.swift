@@ -60,8 +60,8 @@ struct DashboardView: View {
                 Text("Your stories")
                     .font(.title.weight(.bold))
                 Spacer()
-                Button("New project") { coordinator.push(.newProject) }
-                    .buttonStyle(CAPrimaryButtonStyle())
+                // Button("New project") { coordinator.push(.newProject) }
+                //     .buttonStyle(CAPrimaryButtonStyle())
             }
             Text("Welcome back, \(viewModel.welcomeName) · \(viewModel.projects.count) projects")
                 .font(.subheadline)

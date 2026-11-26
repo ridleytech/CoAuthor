@@ -601,4 +601,45 @@ enum BackendDTO {
             var body: String
         }
     }
+
+    // MARK: POST …/audio:generate and /v1/voices/{id}/preview —
+    // TTS responses carry inline base64 audio or an S3 download URL.
+
+    struct AudioResult: Decodable {
+        var status: String?
+        var audioBase64: String?
+        var audioUrl: String?
+        var voiceId: String?
+        var characters: Int?
+        var bytes: Int?
+
+        var audioData: Data? {
+            audioBase64.flatMap { Data(base64Encoded: $0) }
+        }
+    }
+
+    // MARK: GET /v1/account — ElevenLabs subscription data for the
+    // Settings provider screen (plan tier, character usage, voice
+    // slots). `live` is false for the stub fallback.
+
+    struct ProviderAccount: Decodable {
+        var provider: String?
+        var tier: String?
+        var status: String?
+        var characterCount: Int?
+        var characterLimit: Int?
+        var remaining: Int?
+        var nextResetUnix: TimeInterval?
+        var voiceLimit: Int?
+        var live: Bool?
+
+        /// "Resets November 12" style label from the unix reset date.
+        var resetLabel: String? {
+            guard let nextResetUnix else { return nil }
+            let date = Date(timeIntervalSince1970: nextResetUnix)
+            return "Resets " + date.formatted(
+                .dateTime.month(.wide).day()
+            )
+        }
+    }
 }

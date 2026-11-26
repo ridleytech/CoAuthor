@@ -58,6 +58,8 @@ struct VoiceTagPill: View {
     var body: some View {
         Text(text)
             .font(.caption)
+            .lineLimit(1)
+            .fixedSize()
             .foregroundStyle(Color.caSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)

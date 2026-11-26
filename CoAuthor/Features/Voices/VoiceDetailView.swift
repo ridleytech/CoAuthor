@@ -109,12 +109,20 @@ struct VoiceDetailView: View {
                 narratorCard(voice, viewModel)
                 VoiceAuditionStrip(
                     title: "\(voice.name) · audition",
-                    position: "00:08",
-                    duration: voice.sampleSeconds > 0
-                        ? ScriptReaderViewModel.format(voice.sampleSeconds) : "0:00",
+                    position: ScriptReaderViewModel.format(
+                        Int(viewModel.previewPlayer.position)),
+                    duration: viewModel.previewPlayer.duration > 0
+                        ? ScriptReaderViewModel.format(
+                            Int(viewModel.previewPlayer.duration))
+                        : "0:00",
                     isPlaying: viewModel.isPlaying
                 ) {
                     viewModel.togglePlayback()
+                }
+                if let error = viewModel.previewPlayer.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(Color.caSecondary)
                 }
                 designPromptCard(voice)
                 localMetadataCard(voice)

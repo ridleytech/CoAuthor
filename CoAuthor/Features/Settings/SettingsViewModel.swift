@@ -23,14 +23,21 @@ struct JobCreditRow: Identifiable {
 @MainActor
 final class SettingsViewModel {
     private let accountRepository: any AccountRepository
+    private let backendClient: any BackendClient
 
     private(set) var profile: AccountProfile?
     private(set) var loadError: String?
 
-    let credits = CreditsSnapshot()
+    /// Illustrative default; live subscription figures when backend
+    /// mode is on and GET /v1/account succeeds.
+    private(set) var credits = CreditsSnapshot()
 
-    init(accountRepository: any AccountRepository) {
+    init(
+        accountRepository: any AccountRepository,
+        backendClient: any BackendClient = URLSessionBackendClient()
+    ) {
         self.accountRepository = accountRepository
+        self.backendClient = backendClient
     }
 
     var appVersion: String {
@@ -56,6 +63,21 @@ final class SettingsViewModel {
         } catch {
             loadError = "Couldn't load settings."
         }
+        if BackendConfiguration.shared.useBackend {
+            Task { await fetchAccount() }
+        }
+    }
+
+    /// Live subscription snapshot for the root credits card —
+    /// keeps the illustrative snapshot when the call fails.
+    private func fetchAccount() async {
+        do {
+            let account: BackendDTO.ProviderAccount =
+                try await backendClient.get("/v1/account")
+            credits = credits.applying(account)
+        } catch {
+            // Backend unreachable — illustrative card stays.
+        }
     }
 }
 
@@ -75,17 +97,22 @@ final class ManageAccountViewModel {
     }
 }
 
-/// Backs the ElevenLabs connection screen — masked key, custom-voice
-/// capacity, sync/reconnect actions.
+/// Backs the ElevenLabs connection screen — API key entry, account
+/// subscription data, custom-voice capacity, sync/disconnect.
 @Observable
 @MainActor
 final class ProviderConnectionViewModel {
     private let voiceRepository: any VoiceRepository
     private let backendClient: any BackendClient
 
-    let credits = CreditsSnapshot()
+    private(set) var credits = CreditsSnapshot()
     private(set) var voiceCount = 0
-    /// Shown after "Test connection" or "Sync voices".
+    /// Slots available for custom voices on the account (live value
+    /// from the subscription when connected).
+    private(set) var voiceLimit = 10
+    /// API key entry field — empty until the user pastes a key.
+    var apiKeyInput = ""
+    /// Shown after "Test connection"/"Sync voices"/connect actions.
     var statusNote: String?
 
     init(
@@ -96,12 +123,83 @@ final class ProviderConnectionViewModel {
         self.backendClient = backendClient
     }
 
+    /// True when a key is stored in the Keychain.
+    var hasKey: Bool { APIKeyStore.elevenLabsKey != nil }
+    /// True when /v1/account returned live subscription data —
+    /// possible via the backend env key without a stored app key.
+    private(set) var accountLive = false
+    /// Last four characters of the stored key, for masked display.
+    var keyTail: String? { APIKeyStore.elevenLabsKeyTail }
+
     var capacitySlots: (used: Int, total: Int) {
-        (used: voiceCount, total: 10)
+        (used: voiceCount, total: voiceLimit)
     }
 
     func load() {
         voiceCount = (try? voiceRepository.fetchVoices().count) ?? 0
+        // Fetch whenever the backend is reachable — the env key
+        // serves account data even before a key is stored in-app.
+        loadAccount()
+    }
+
+    /// Saves the entered key to the Keychain and pulls the real
+    /// subscription + voice library — the "Connect" action.
+    func connect() {
+        let key = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else {
+            statusNote = "! Paste your ElevenLabs API key first."
+            return
+        }
+        APIKeyStore.elevenLabsKey = key
+        apiKeyInput = ""
+        statusNote = nil
+        loadAccount()
+    }
+
+    /// Clears the stored key — provider calls revert to stubs.
+    /// Cached voice previews go too; they belong to the account
+    /// the key was tied to.
+    func disconnect() {
+        APIKeyStore.elevenLabsKey = nil
+        AudioPreviewPlayer.clearCachedClips()
+        credits = CreditsSnapshot()
+        voiceLimit = 10
+        statusNote = "Disconnected — stored API key removed."
+    }
+
+    /// Fetches GET /v1/account with the stored key — real plan tier,
+    /// character usage, reset date, and voice-slot limit.
+    func loadAccount() {
+        guard BackendConfiguration.shared.useBackend else {
+            statusNote = "Key saved. Turn on backend mode "
+                + "(Settings → Developer) to fetch account data."
+            return
+        }
+        Task {
+            do {
+                let account: BackendDTO.ProviderAccount =
+                    try await backendClient.get("/v1/account")
+                credits = credits.applying(account)
+                if let voiceLimit = account.voiceLimit, voiceLimit > 0 {
+                    self.voiceLimit = voiceLimit
+                }
+                if let tail = keyTail {
+                    var copy = credits
+                    copy.apiKeyTail = tail
+                    credits = copy
+                }
+                accountLive = account.live == true
+                statusNote = accountLive
+                    ? "✓ Connected — \(account.tier?.capitalized ?? "ElevenLabs") "
+                        + "plan, \(credits.remaining) characters remaining."
+                    : "Account data is illustrative — "
+                        + (hasKey ? "backend is in stub mode."
+                           : "connect a key or set PROVIDER_MODE=live.")
+            } catch {
+                statusNote = "! Key rejected or backend unreachable — "
+                    + "check the key and the base URL."
+            }
+        }
     }
 
     /// Backend mode pings GET /health; otherwise a local note.
@@ -212,7 +310,8 @@ final class NotificationSettingsViewModel {
     }
 }
 
-/// Backs Credits & Usage — illustrative balance + real job history.
+/// Backs Credits & Usage — live ElevenLabs subscription data +
+/// real job history; illustrative fallback when backend is off.
 @Observable
 @MainActor
 final class CreditsUsageViewModel {
@@ -220,9 +319,13 @@ final class CreditsUsageViewModel {
     private let backendClient: any BackendClient
 
     /// Illustrative by default; live values when backend mode is on
-    /// and `GET /v1/credits` succeeds.
+    /// and `GET /v1/account` succeeds.
     private(set) var credits = CreditsSnapshot()
+    private(set) var account: BackendDTO.ProviderAccount?
+    /// Custom voices in the ElevenLabs library (live /v1/voices).
+    private(set) var voiceCountUsed: Int?
     private(set) var rows: [JobCreditRow] = []
+    private(set) var isRefreshing = false
 
     init(
         generationRepository: any GenerationRepository,
@@ -254,17 +357,57 @@ final class CreditsUsageViewModel {
             )
         }
         if BackendConfiguration.shared.useBackend {
-            Task { await fetchLiveCredits() }
+            refresh()
         }
     }
 
-    /// Backend data path — fetches the balance from the API; the
-    /// illustrative snapshot stays when the call fails.
+    /// Breakdown rows for the account card — real subscription
+    /// figures when live, the illustrative examples otherwise.
+    /// Values are preformatted strings (mixed credits + labels).
+    var breakdownRows: [(String, String)] {
+        if let account, account.live == true {
+            var rows: [(String, String)] = [
+                ("Characters used this period",
+                 "\(account.characterCount ?? 0)"),
+                ("Character limit", "\(account.characterLimit ?? 0)"),
+            ]
+            if let used = voiceCountUsed, let limit = account.voiceLimit {
+                rows.append(("Custom voice slots", "\(used) of \(limit)"))
+            }
+            if let label = account.resetLabel {
+                rows.append(("Next reset",
+                    label.replacingOccurrences(of: "Resets ", with: "")))
+            }
+            if let status = account.status {
+                rows.append(("Subscription", status.capitalized))
+            }
+            return rows
+        }
+        return credits.breakdown.map { ($0.0, "\($0.1) credits") }
+    }
+
+    /// Refetches the account snapshot — wired to the card's
+    /// Refresh button.
+    func refresh() {
+        guard BackendConfiguration.shared.useBackend else { return }
+        Task { await fetchLiveCredits() }
+    }
+
+    /// Backend data path — pulls the real subscription
+    /// (`/v1/account`) and the voice library size (`/v1/voices`);
+    /// the illustrative snapshot stays when the call fails.
     private func fetchLiveCredits() async {
+        isRefreshing = true
+        defer { isRefreshing = false }
         do {
-            let response: CreditsSnapshot.Response = try await backendClient
-                .get("/v1/credits")
+            let response: BackendDTO.ProviderAccount =
+                try await backendClient.get("/v1/account")
+            account = response
             credits = credits.applying(response)
+            if let voices: [BackendDTO.Voice] =
+                try? await backendClient.get("/v1/voices") {
+                voiceCountUsed = voices.count
+            }
         } catch {
             // Keep the illustrative snapshot — backend unreachable.
         }

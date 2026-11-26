@@ -85,9 +85,15 @@ final class Voice {
     }
 
     var sampleLabel: String {
-        sampleSeconds > 0
-            ? String(format: "%d:%02d sample", sampleSeconds / 60, sampleSeconds % 60)
-            : "Not available"
+        if sampleSeconds > 0 {
+            return String(
+                format: "%d:%02d sample",
+                sampleSeconds / 60, sampleSeconds % 60)
+        }
+        // A provider-linked voice can always be previewed live via
+        // TTS even without a stored sample — only voices with
+        // neither are truly unavailable.
+        return savedVoiceID.isEmpty ? "Not available" : "Preview"
     }
 
     /// Second line on the list card — e.g.
